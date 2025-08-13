@@ -15,8 +15,8 @@ struct PersistenceController {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
         for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
+            let newSong = Song(context: viewContext)
+            newSong.createdTime = Date()
         }
         do {
             try viewContext.save()
@@ -33,6 +33,7 @@ struct PersistenceController {
 
     init(inMemory: Bool = false) {
         container = NSPersistentCloudKitContainer(name: "Songbook")
+        print("Preview store URL: \(container.persistentStoreDescriptions.first!.url?.absoluteString ?? "none")")
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
