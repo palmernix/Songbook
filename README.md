@@ -32,7 +32,7 @@ An integrated AI “Inspire” button uses a lightweight FastAPI + LangChain bac
 - Stateless for song text — only embeddings + metadata are stored.
 - Deployable to **Google Cloud Run**
 
-**Data flow**
+### Data Flow
 1. You write lyrics → press **Save** → iOS app sends snapshot to `/ingest/snapshot`.
 2. Backend splits text into lines → embeds → upserts into Chroma (vector DB).
 3. When you press **Inspire**, app sends `/suggest` with current lyrics + context.
@@ -40,7 +40,7 @@ An integrated AI “Inspire” button uses a lightweight FastAPI + LangChain bac
 
 ---
 
-### 🧱 Repo Architecture
+### 🧱 Architecture
 song-spark/
 │
 ├── app-ios/           # SwiftUI + SwiftData iOS app
