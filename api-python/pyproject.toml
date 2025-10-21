@@ -1,13 +1,14 @@
 [project]
 name = "api-python"
 version = "0.1.0"
-description = ""
+description = "FastAPI backend for Song Spark"
 authors = [{name = "Palmer Nix",email = "nix.palmer9200@gmail.com"}]
-package-mode = false
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
-dependencies = []
+dependencies = ["fastapi (>=0.119.1,<0.120.0)", "uvicorn (>=0.38.0,<0.39.0)", "langchain (>=1.0.1,<2.0.0)", "langchain-openai (>=1.0.0,<2.0.0)", "chromadb (>=1.2.1,<2.0.0)", "python-dotenv (>=1.1.1,<2.0.0)"]
 
+[tool.poetry]
+package-mode = false
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
