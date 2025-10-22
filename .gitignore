@@ -60,3 +60,25 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+
+# --- Python backend (api-python) ---
+api-python/.venv/ 
+api-python/.env
+api-python/__pycache__/
+api-python/**/*.pyc
+api-python/.pytest_cache/
+api-python/.mypy_cache/
+api-python/.ruff_cache/
+api-python/.ipynb_checkpoints/
+api-python/.coverage
+
+# Chroma vector DB (local persistence)
+api-python/chroma_db/
+
+# Editor/IDE cruft
+api-python/.idea/
+api-python/.vscode/
+
+# macOS cruft (catch-all)
+.DS_Store
