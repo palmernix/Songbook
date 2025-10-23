@@ -7,7 +7,7 @@ import time
 
 # --- env & app ---
 load_dotenv()
-app = FastAPI(title="Song Spark API", version="0.1.0")
+app = FastAPI(title="LyricSheets API", version="0.1.0")
 
 # Allow your iOS app (debug + prod). For now, be permissive in dev:
 app.add_middleware(
