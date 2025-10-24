@@ -13,12 +13,11 @@ struct APIClient {
         let userLyrics: String
         let contextFocus: String
         let contextFull: String
-        let style: String
-        let mood: String
-        let scheme: String
-        let syllables: String
-        let sectionKind: String?
-        let songId: String?
+        var style: String? = nil
+        var mood: String? = nil
+        var scheme: String? = nil
+        var syllables: String? = nil
+        var sectionKind: String? = nil
         let temperature: Double
         let k: Int
         let minSim: Double
@@ -30,23 +29,28 @@ struct APIClient {
         let suggestion: String
     }
 
-    func suggest(userLyrics: String, contextFocus: String, contextFull: String) async throws -> String {
+    func suggest(
+        userLyrics: String,
+        contextFocus: String,
+        contextFull: String,
+        options: InspireOptions = .empty
+    ) async throws -> String {
         let body = SuggestRequest(
             userLyrics: userLyrics,
             contextFocus: contextFocus,
             contextFull: contextFull,
-            style: "indie folk",
-            mood: "neutral",
-            scheme: "ABAB",
-            syllables: "8-10",
-            sectionKind: "verse",
-            songId: nil,
+            style: options.style,
+            mood: options.mood,
+            scheme: options.scheme,
+            syllables: options.syllables,
+            sectionKind: options.sectionKind,
             temperature: 0.9,
             k: 6,
             minSim: 0.18,
             mmr: true,
             stream: false
         )
+
         let url = baseURL.appendingPathComponent("suggest")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
