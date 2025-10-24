@@ -3,11 +3,8 @@ import Foundation
 struct APIClient {
     static let shared = APIClient()
 
-    #if DEBUG
-    private let baseURL = URL(string: "http://127.0.0.1:8000")!
-    #else
-    private let baseURL = URL(string: "https://your-api.example.com")!
-    #endif
+    // private let baseURL = URL(string: "http://127.0.0.1:8000")! //For local development
+    private let baseURL = URL(string: "https://lyricsheets-api-lnfivdl47a-ue.a.run.app")!
 
     struct SuggestRequest: Codable {
         let userLyrics: String
