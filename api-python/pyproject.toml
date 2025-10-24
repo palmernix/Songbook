@@ -5,7 +5,7 @@ description = "FastAPI backend for Song Spark"
 authors = [{name = "Palmer Nix",email = "nix.palmer9200@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
-dependencies = ["fastapi (>=0.119.1,<0.120.0)", "uvicorn (>=0.38.0,<0.39.0)", "langchain (>=1.0.1,<2.0.0)", "langchain-openai (>=1.0.0,<2.0.0)", "chromadb (>=1.2.1,<2.0.0)", "python-dotenv (>=1.1.1,<2.0.0)", "langchain-google-genai (>=3.0.0,<4.0.0)"]
+dependencies = ["fastapi (>=0.119.1,<0.120.0)", "uvicorn (>=0.38.0,<0.39.0)", "langchain (>=1.0.1,<2.0.0)", "langchain-openai (>=1.0.0,<2.0.0)", "chromadb (>=1.2.1,<2.0.0)", "python-dotenv (>=1.1.1,<2.0.0)", "langchain-google-genai (>=3.0.0,<4.0.0)", "requests (>=2.32.5,<3.0.0)"]
 
 [tool.poetry]
 package-mode = false
