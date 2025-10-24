@@ -12,13 +12,21 @@ from Services.llm import inspire_one_line
 load_dotenv()
 app = FastAPI(title="LyricSheets API", version="0.1.0")
 
-# Allow your iOS app (debug + prod). For now, be permissive in dev:
+ALLOWED_ORIGINS = [
+    # Production API
+    "https://lyricsheets-api-lnfivdl47a-ue.a.run.app",
+
+    # Local FastAPI (for dev)
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten later
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,  # tighten later
+    allow_credentials=False,
+    allow_methods=["POST", "GET", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # --- health ---
