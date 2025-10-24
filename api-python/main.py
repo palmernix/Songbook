@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from schemas import IngestSnapshot, SuggestRequest, SuggestResponse
 from dotenv import load_dotenv
 import time
+import logging
 import os, requests
 
 from schemas import SuggestRequest, SuggestResponse, IngestSnapshot
@@ -29,13 +30,19 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
+# --- logging ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("lyricsheets")
+
 # --- health ---
 @app.get("/health")
 def health():
+    logger.info("Received /health request")
     return {"status": "ok"}
 
 @app.get("/debug/models")
 def list_models():
+    logger.info("Received /list_models request")
     key = os.getenv("GOOGLE_API_KEY")
     r = requests.get(
         "https://generativelanguage.googleapis.com/v1/models",
@@ -68,6 +75,7 @@ def split_lines(full_text: str) -> list[str]:
 # --- /ingest/snapshot ---
 @app.post("/ingest/snapshot")
 def ingest_snapshot(payload: IngestSnapshot):
+    logger.info("Received /ingest_snapshot request")
     # TODO:
     # 1) parse sections from headers like [Verse]/[Chorus] to set metadata
     # 2) embed each line & upsert into Chroma "voice" with metadata
@@ -78,6 +86,7 @@ def ingest_snapshot(payload: IngestSnapshot):
 # --- /suggest ---
 @app.post("/suggest", response_model=SuggestResponse)
 def suggest(req: SuggestRequest):
+    logger.info("Received /suggest request: %s", req)
     t0 = time.time()
 
     # TODO:
