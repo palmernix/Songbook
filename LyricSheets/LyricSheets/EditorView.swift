@@ -111,8 +111,8 @@ struct EditorView: View {
 
         do {
             suggestion = try await APIClient.shared.suggest(
-                userLyrics: lastLine(), 
-                contextFocus: focusContext(), 
+                userLyrics: currentLineAtCaret(),
+                contextFocus: currentStanzaAtCaret(),
                 contextFull: song.text,
                 options: options
             )
@@ -172,12 +172,46 @@ struct EditorView: View {
     }
 
     // Helpers to capture context
-    private func lastLine() -> String {
-        song.text.split(separator: "\n").last.map(String.init) ?? ""
+    private func currentLineAtCaret() -> String {
+        let ns = song.text as NSString
+        // Use end of selection (caret if nothing selected)
+        var pos = selection.location + selection.length
+        pos = max(0, min(pos, ns.length))
+
+        // FAST PATH: if the text before the caret ends with a newline, the current line is empty
+        if pos > 0, ns.character(at: pos - 1) == 10 { // '\n'
+            return ""
+        }
+
+        // Consider only the text *before* the caret
+        let before = ns.substring(to: pos) as NSString
+        // Find last newline in 'before'
+        let lastNL = before.range(of: "\n", options: .backwards)
+        let lineStart = (lastNL.location == NSNotFound) ? 0 : lastNL.location + 1
+
+        let raw = before.substring(from: lineStart)
+        return raw.trimmingCharacters(in: .whitespaces)
     }
-    private func focusContext() -> String {
-        let lines = song.text.split(separator: "\n", omittingEmptySubsequences: false)
-        return lines.suffix(8).joined(separator: "\n")
+
+    private func currentStanzaAtCaret() -> String {
+        let lines = song.text.components(separatedBy: "\n")
+
+        // caret line index
+        let loc = min(selection.location, (song.text as NSString).length)
+        let caret = song.text.index(song.text.startIndex, offsetBy: loc)
+        let caretLineIndex = song.text[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
+
+        // expand up/down until a blank line
+        var start = caretLineIndex
+        while start > 0 && !lines[start - 1].trimmingCharacters(in: .whitespaces).isEmpty {
+            start -= 1
+        }
+        var end = caretLineIndex
+        while end < lines.count - 1 && !lines[end + 1].trimmingCharacters(in: .whitespaces).isEmpty {
+            end += 1
+        }
+
+        return lines[start...end].joined(separator: "\n")
     }
 }
 
