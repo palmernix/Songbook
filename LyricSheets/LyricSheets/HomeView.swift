@@ -11,43 +11,27 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            List {
                 if filteredSongs.isEmpty {
                     ContentUnavailableView("No songs yet",
                                            systemImage: "music.note.list",
                                            description: Text("Tap + to create your first song."))
                 } else {
-                    List {
-                        ForEach(filteredSongs) { song in
-                            NavigationLink(value: song) {
-                                SongCard(song: song)
-                            }
-                            .contextMenu {
-                                Button(role: .destructive) { delete(song) } label {
-                                    Label("Delete", systemImage: "trash")
-                                }
+                    ForEach(filteredSongs) { song in
+                        NavigationLink(value: song) {
+                            SongCard(song: song)
+                        }
+                        .contextMenu {
+                            Button(role: .destructive, action: { delete(song) }) {
+                                Label("Delete", systemImage: "trash")
                             }
                         }
-                        .onDelete(perform: deleteOffsets)
                     }
-                    .listStyle(.insetGrouped)
+                    .onDelete(perform: deleteOffsets)
                 }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("LyricSheets")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    EditButton()
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        newTitle = ""
-                        showNewSongSheet = true
-                    } label {
-                        Image(systemName: "plus.circle.fill")
-                    }
-                    .accessibilityLabel("New Song")
-                }
-            }
             .navigationDestination(for: Song.self) { song in
                 EditorView(song: song)
             }
@@ -73,6 +57,20 @@ struct HomeView: View {
                     }
                 }
                 .presentationDetents([.fraction(0.35)])
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarLeading) {
+                    EditButton()
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button(action: {
+                        newTitle = ""
+                        showNewSongSheet = true
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .accessibilityLabel("New Song")
+                }
             }
         }
     }
