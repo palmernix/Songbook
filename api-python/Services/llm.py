@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Dict
 import os
 import re
+import string
 
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -59,7 +60,7 @@ def _hints_from_payload(p: Dict) -> str:
     if p.get("sectionKind"):parts.append(f"Section: {p['sectionKind']}")
     return "HINTS:\n" + " | ".join(parts) if parts else ""
 
-def _postprocess_single_line(text: str) -> str:
+def _postprocess_single_line(text: str, user_lyrics: str) -> str:
     """Ensure single-line, trimmed, no trailing punctuation spam, <= 180 chars hard cap."""
     # Take only first line if model slipped a newline
     line = text.splitlines()[0]
@@ -68,8 +69,32 @@ def _postprocess_single_line(text: str) -> str:
     # Trim quotes/backticks if model wrapped output
     line = line.strip("\"'` ")
     # Hard cap (defensive)
-    return line[:180]
+    line = line[:180]
 
+    line = _adjust_suggestion_capitalization(line, user_lyrics)
+
+    return line
+
+def _adjust_suggestion_capitalization(suggestion: str, user_lyrics: str) -> str:
+    """
+    If the userLyrics line is non-empty and doesn't end with sentence punctuation,
+    make the first character of the suggestion lowercase.
+    """
+    if not suggestion:
+        return suggestion
+
+    if not user_lyrics.strip():
+        return suggestion  # brand new line → keep capitalization
+
+    trimmed = user_lyrics.strip()
+    if trimmed[-1:] in ".!?;:":
+        return suggestion  # after punctuation → new sentence → keep cap
+
+    # Otherwise, lowercase first alpha character only
+    first = suggestion[0]
+    if first in string.ascii_letters:
+        suggestion = first.lower() + suggestion[1:]
+    return suggestion
 
 def inspire_one_line(payload: Dict) -> str:
     """
@@ -77,8 +102,10 @@ def inspire_one_line(payload: Dict) -> str:
     Returns a single, cleaned line.
     """
 
+    user_lyrics = payload.get("userLyrics", "") or ""
+
     inputs = {
-        "userLyrics": payload.get("userLyrics", "") or "",
+        "userLyrics": user_lyrics,
         "contextFocus": payload.get("contextFocus", "") or "",
         "contextFull": payload.get("contextFull", ""),
         "hints": _hints_from_payload(payload),
@@ -92,4 +119,4 @@ def inspire_one_line(payload: Dict) -> str:
         raise Exception("No response from LLM")
 
     text = getattr(raw, "content", raw) or ""
-    return _postprocess_single_line(text)
+    return _postprocess_single_line(text, user_lyrics)
