@@ -12,11 +12,10 @@ class SuggestRequest(BaseModel):
     userLyrics: str
     contextFocus: str = ""
     contextFull: str = ""
-    style: str = "indie folk"
-    mood: str = "neutral"
-    scheme: str = "ABAB"
-    syllables: str = "8-10"
-    songId: Optional[str] = None
+    style: Optional[str] = None
+    mood: Optional[str] = None
+    scheme: Optional[str] = None
+    syllables: Optional[str] = None
     sectionKind: Optional[str] = None
     useReferences: bool = False
     temperature: float = 0.9
