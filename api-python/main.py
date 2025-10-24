@@ -2,8 +2,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from schemas import IngestSnapshot, SuggestRequest, SuggestResponse
 from dotenv import load_dotenv
-import os
 import time
+import os, requests
+
+from schemas import SuggestRequest, SuggestResponse, IngestSnapshot
+from Services.llm import inspire_one_line
 
 # --- env & app ---
 load_dotenv()
@@ -22,6 +25,22 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/debug/models")
+def list_models():
+    key = os.getenv("GOOGLE_API_KEY")
+    r = requests.get(
+        "https://generativelanguage.googleapis.com/v1/models",
+        params={"key": key},
+        timeout=15,
+    )
+    r.raise_for_status()
+    models = []
+    for m in r.json().get("models", []):
+        # show only models that support text generation
+        if "generateContent" in m.get("supportedGenerationMethods", []):
+            models.append(m["name"])  # e.g. "models/gemini-1.5-flash-latest"
+    return {"models": models}
 
 # --- NOTE: place to initialize LangChain & Chroma singletons later ---
 # Example skeleton:
@@ -61,14 +80,14 @@ def suggest(req: SuggestRequest):
     # 5) call LLM; enforce single-line output; compute token stats
 
     # Temporary stub so you can wire iOS now:
-    seed = req.userLyrics.strip()
-    fake_line = f"{seed} — and the streetlights shake the snow from their sleeves"
-    latency = int((time.time() - t0) * 1000)
+    t0 = time.time()
+    suggestion = inspire_one_line(req.model_dump())
 
+    latency = int((time.time() - t0) * 1000)
     return SuggestResponse(
-        suggestion=fake_line.splitlines()[0][:280],  # guarantee single line
+        suggestion=suggestion,
         usedVoiceIds=[],
         usedReferenceIds=[],
-        tokens={"prompt": 0, "completion": 0, "total": 0},
+        tokens={},  # fill later when you use billing info
         latencyMs=latency,
     )
