@@ -8,6 +8,9 @@ struct EditorView: View {
     @State private var isSaving = false
     @State private var showInspire = false
     @State private var suggestion: String = ""
+    @State private var showOptions = false
+    @State private var inspireOptions: InspireOptions = .empty
+    @State private var isGenerating = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,14 +57,19 @@ struct EditorView: View {
     private var bottomBar: some View {
         HStack {
             Button {
-                Task { await inspire() }
+                showOptions = true
             } label: {
-                Label("Inspire", systemImage: "sparkles")
+                if isGenerating {
+                    ProgressView()
+                        .padding(.horizontal, 4)
+                } else {
+                    Label("Inspire", systemImage: "sparkles")
+                }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(isGenerating)
 
             Spacer()
-
             Text(wordCountString)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -69,6 +77,33 @@ struct EditorView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.thinMaterial)
+        // Present options first
+        .sheet(isPresented: $showOptions) {
+            InspireOptionsSheet(options: inspireOptions) { chosen in
+                inspireOptions = chosen
+                Task { await inspire(using: chosen) }
+            }
+        }
+    }
+
+    private func inspire(using options: InspireOptions) async {
+        isGenerating = true
+        defer { isGenerating = false }
+
+        do {
+            suggestion = try await APIClient.shared.suggest(
+                userLyrics: lastLine(), 
+                contextFocus: focusContext(), 
+                contextFull: song.text,
+                options: options
+            )
+
+            showInspire = true
+        } catch {
+            // Handle the error - you might want to show an alert or set a default message
+            suggestion = "Sorry, couldn't generate a suggestion right now. Please try again."
+            showInspire = true
+        }
     }
 
     private var wordCountString: String {
@@ -93,14 +128,6 @@ struct EditorView: View {
         song.text.append(suggestion)
         suggestion = ""
         touch()
-    }
-
-    private func inspire() async {
-        // For now, fake it; we’ll wire APIClient next
-        suggestion = "... demo lyric suggestion from AI ..."
-        showInspire = true
-        // suggestion = await APIClient.shared.suggest(userLyrics: lastLine(), contextFocus: focusContext(), contextFull: song.text)
-        // showInspire = true
     }
 
     // Helpers to capture context
