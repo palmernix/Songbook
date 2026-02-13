@@ -105,8 +105,6 @@ struct BrowseFolderView: View {
     @State private var node: FolderNode?
     @State private var isLoading = true
     @State private var showNewSheet = false
-    @State private var showDeleteConfirm = false
-    @State private var nodeToDelete: FolderNode?
     @State private var newSongTitle = ""
     @State private var folderHasSongFile = false
 
@@ -140,17 +138,6 @@ struct BrowseFolderView: View {
         }
         .sheet(isPresented: $showNewSheet) {
             newSongSheet
-        }
-        .alert("Delete Song?", isPresented: $showDeleteConfirm, presenting: nodeToDelete) { toDelete in
-            Button("Delete", role: .destructive) {
-                Task {
-                    try? await iCloudScanService.deleteSongFolder(at: toDelete.url)
-                    await loadFolder()
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { toDelete in
-            Text("This will permanently delete \"\(toDelete.name)\" and its contents.")
         }
     }
 
@@ -270,19 +257,11 @@ struct BrowseFolderView: View {
                             )
                         }
                         .buttonStyle(.plain)
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                nodeToDelete = child
-                                showDeleteConfirm = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
                     } else {
                         Button {
                             coordinator.navigateToFolder(child.url)
                         } label: {
-                            FolderCard(name: child.name, itemCount: child.children.count)
+                            FolderCard(name: child.name)
                         }
                         .buttonStyle(.plain)
                     }

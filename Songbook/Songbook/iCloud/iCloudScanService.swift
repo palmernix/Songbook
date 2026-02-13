@@ -133,10 +133,4 @@ enum iCloudScanService {
             return songFile
         }.value
     }
-
-    static func deleteSongFolder(at url: URL) async throws {
-        try await Task.detached {
-            try FileManager.default.removeItem(at: url)
-        }.value
-    }
 }
