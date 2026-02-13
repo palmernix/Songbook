@@ -9,14 +9,25 @@ struct BrowseView: View {
 
     var body: some View {
         Group {
-            if let url = coordinator.currentFolderURL {
-                BrowseFolderView(
-                    folderURL: url,
-                    folderName: url.lastPathComponent,
-                    isRoot: !coordinator.isInSubfolder,
-                    showSettings: $showSettings
-                )
-                .id(url)
+            if let rootURL = coordinator.rootFolderURL {
+                NavigationStack {
+                    BrowseFolderView(
+                        folderURL: rootURL,
+                        folderName: rootURL.lastPathComponent,
+                        isRoot: true,
+                        showSettings: $showSettings
+                    )
+                    .navigationBarHidden(true)
+                    .navigationDestination(for: URL.self) { url in
+                        BrowseFolderView(
+                            folderURL: url,
+                            folderName: url.lastPathComponent,
+                            isRoot: false,
+                            showSettings: $showSettings
+                        )
+                        .navigationBarHidden(true)
+                    }
+                }
             } else {
                 noFolderState
             }
@@ -37,7 +48,7 @@ struct BrowseView: View {
     private func resolveURL() {
         guard let url = settingsStore.resolveBookmark() else {
             print("[BrowseView] resolveBookmark returned nil")
-            coordinator.folderStack = []
+            coordinator.rootFolderURL = nil
             return
         }
         let gained = url.startAccessingSecurityScopedResource()
@@ -102,6 +113,7 @@ struct BrowseFolderView: View {
     @Binding var showSettings: Bool
 
     @Environment(EditorCoordinator.self) private var coordinator
+    @Environment(\.dismiss) private var dismiss
     @State private var node: FolderNode?
     @State private var isLoading = true
     @State private var showNewSheet = false
@@ -166,7 +178,7 @@ struct BrowseFolderView: View {
 
             HStack {
                 if !isRoot {
-                    Button { coordinator.navigateBackFromFolder() } label: {
+                    Button { dismiss() } label: {
                         Image(systemName: "chevron.left")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Color.darkInk)
@@ -258,9 +270,7 @@ struct BrowseFolderView: View {
                         }
                         .buttonStyle(.plain)
                     } else {
-                        Button {
-                            coordinator.navigateToFolder(child.url)
-                        } label: {
+                        NavigationLink(value: child.url) {
                             FolderCard(name: child.name)
                         }
                         .buttonStyle(.plain)

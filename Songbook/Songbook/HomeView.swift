@@ -28,14 +28,14 @@ struct HomeView: View {
     @State private var coordinator = SwiftDataCoordinator()
 
     var body: some View {
-        Group {
+        ZStack {
+            SwiftDataBrowseView(settingsStore: settingsStore, coordinator: coordinator)
+
             if let song = coordinator.song {
                 SwiftDataSongDetailView(song: song, coordinator: coordinator)
                     .id(song.id)
                     .transition(.move(edge: .trailing))
-            } else {
-                SwiftDataBrowseView(settingsStore: settingsStore, coordinator: coordinator)
-                    .transition(.move(edge: .leading))
+                    .zIndex(1)
             }
         }
     }

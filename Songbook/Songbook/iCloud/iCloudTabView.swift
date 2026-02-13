@@ -4,27 +4,11 @@ import SwiftUI
 class EditorCoordinator {
     var songFile: SongFile?
     var folderURL: URL?
-    var folderStack: [URL] = []
-
-    var currentFolderURL: URL? { folderStack.last }
-    var isInSubfolder: Bool { folderStack.count > 1 }
+    var rootFolderURL: URL?
 
     func setRootFolder(_ url: URL) {
-        if folderStack.isEmpty || folderStack.first != url {
-            folderStack = [url]
-        }
-    }
-
-    func navigateToFolder(_ url: URL) {
-        withAnimation {
-            folderStack.append(url)
-        }
-    }
-
-    func navigateBackFromFolder() {
-        guard folderStack.count > 1 else { return }
-        withAnimation {
-            folderStack.removeLast()
+        if rootFolderURL != url {
+            rootFolderURL = url
         }
     }
 
@@ -49,15 +33,15 @@ struct iCloudTabView: View {
     @State private var coordinator = EditorCoordinator()
 
     var body: some View {
-        Group {
+        ZStack {
+            BrowseView(settingsStore: settingsStore)
+
             if let songFile = coordinator.songFile,
                let folderURL = coordinator.folderURL {
                 SongDetailView(folderURL: folderURL, initialSongFile: songFile)
                     .id(songFile.id)
                     .transition(.move(edge: .trailing))
-            } else {
-                BrowseView(settingsStore: settingsStore)
-                    .transition(.move(edge: .leading))
+                    .zIndex(1)
             }
         }
         .environment(coordinator)
