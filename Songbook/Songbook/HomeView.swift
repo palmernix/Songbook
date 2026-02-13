@@ -318,7 +318,7 @@ private struct SwiftDataSongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Lyrics")
+                        Text("Lyrics")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "text.quote")
@@ -330,7 +330,7 @@ private struct SwiftDataSongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Notes")
+                        Text("Notes")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "note.text")
@@ -342,7 +342,7 @@ private struct SwiftDataSongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Audio")
+                        Text("Audio")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "waveform")
@@ -354,7 +354,7 @@ private struct SwiftDataSongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Video")
+                        Text("Video")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "video")

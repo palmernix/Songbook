@@ -135,7 +135,7 @@ struct SongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Lyrics")
+                        Text("Lyrics")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "text.quote")
@@ -147,7 +147,7 @@ struct SongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Notes")
+                        Text("Notes")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "note.text")
@@ -159,7 +159,7 @@ struct SongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Audio")
+                        Text("Audio")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "waveform")
@@ -171,7 +171,7 @@ struct SongDetailView: View {
                     showNewEntrySheet = false
                 } label: {
                     Label {
-                        Text("New Video")
+                        Text("Video")
                             .font(.body.weight(.medium))
                     } icon: {
                         Image(systemName: "video")
