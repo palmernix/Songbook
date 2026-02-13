@@ -7,6 +7,7 @@ struct VideoProgressBar: View {
     @Binding var progress: Double
     let comments: [MediaComment]
     let duration: TimeInterval
+    var onScrub: ((Double) -> Void)? = nil
 
     var body: some View {
         GeometryReader { geo in
@@ -36,10 +37,43 @@ struct VideoProgressBar: View {
                     .onChanged { value in
                         let newProgress = max(0, min(1, value.location.x / geo.size.width))
                         progress = newProgress
+                        onScrub?(newProgress)
                     }
             )
         }
         .frame(height: 12)
+    }
+}
+
+// MARK: - Bare Player (AVPlayerLayer, no controls)
+
+private struct BarePlayerView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> BarePlayerUIView {
+        BarePlayerUIView(player: player)
+    }
+
+    func updateUIView(_ uiView: BarePlayerUIView, context: Context) {
+        uiView.playerLayer.player = player
+    }
+
+    final class BarePlayerUIView: UIView {
+        let playerLayer: AVPlayerLayer
+
+        init(player: AVPlayer) {
+            playerLayer = AVPlayerLayer(player: player)
+            playerLayer.videoGravity = .resizeAspect
+            super.init(frame: .zero)
+            layer.addSublayer(playerLayer)
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            playerLayer.frame = bounds
+        }
     }
 }
 
@@ -58,8 +92,11 @@ struct VideoView: View {
     @State private var showAddComment = false
     @State private var newCommentText = ""
     @State private var player: AVPlayer?
+    @State private var isPlaying = false
+    @State private var showPlaybackOverlay = false
     @State private var playbackProgress: Double = 0
     @State private var playbackDuration: TimeInterval = 0
+    @State private var videoAspectRatio: CGFloat = 16/9
     @State private var timeObserver: Any?
 
     @Environment(\.dismiss) private var dismiss
@@ -201,11 +238,29 @@ struct VideoView: View {
 
     private var playbackView: some View {
         VStack(spacing: 0) {
+            if sortedComments.isEmpty { Spacer() }
+
             if let player {
-                VideoPlayer(player: player)
-                    .aspectRatio(16/9, contentMode: .fit)
+                BarePlayerView(player: player)
+                    .aspectRatio(videoAspectRatio, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal, 20)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.black.opacity(showPlaybackOverlay ? 0.25 : 0))
+                            .overlay {
+                                if showPlaybackOverlay {
+                                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundStyle(.white)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.2), value: showPlaybackOverlay)
+                    }
+                    .onTapGesture {
+                        togglePlayback()
+                    }
+                    .padding(.horizontal, videoAspectRatio >= 1 ? 20 : 60)
                     .padding(.top, 12)
             }
 
@@ -214,7 +269,10 @@ struct VideoView: View {
                 VideoProgressBar(
                     progress: $playbackProgress,
                     comments: sortedComments,
-                    duration: playbackDuration
+                    duration: playbackDuration,
+                    onScrub: { progress in
+                        seekVideo(to: progress * playbackDuration)
+                    }
                 )
 
                 HStack {
@@ -229,9 +287,6 @@ struct VideoView: View {
             }
             .padding(.horizontal, 24)
             .padding(.top, 10)
-            .onChange(of: playbackProgress) {
-                // When user scrubs via the progress bar, seek the video
-            }
 
             // Buttons
             VStack(spacing: 12) {
@@ -267,6 +322,8 @@ struct VideoView: View {
                 .tint(Color.darkInk)
             }
             .padding(.top, 12)
+
+            if sortedComments.isEmpty { Spacer() }
 
             // Comments list
             if !sortedComments.isEmpty {
@@ -317,6 +374,7 @@ struct VideoView: View {
         Button {
             seekVideo(to: comment.timestamp)
             player?.play()
+            isPlaying = true
         } label: {
             HStack(alignment: .top, spacing: 10) {
                 Text(formatTime(comment.timestamp))
@@ -360,7 +418,7 @@ struct VideoView: View {
             let avPlayer = AVPlayer(url: tempURL)
             player = avPlayer
 
-            // Get duration
+            // Get duration and aspect ratio
             let asset = avPlayer.currentItem?.asset
             Task {
                 if let duration = try? await asset?.load(.duration) {
@@ -368,6 +426,20 @@ struct VideoView: View {
                     if seconds.isFinite && seconds > 0 {
                         await MainActor.run {
                             playbackDuration = seconds
+                        }
+                    }
+                }
+                if let tracks = try? await asset?.load(.tracks) {
+                    let videoTrack = tracks.first(where: { $0.mediaType == .video })
+                    if let size = try? await videoTrack?.load(.naturalSize),
+                       let transform = try? await videoTrack?.load(.preferredTransform) {
+                        let transformed = size.applying(transform)
+                        let w = abs(transformed.width)
+                        let h = abs(transformed.height)
+                        if w > 0 && h > 0 {
+                            await MainActor.run {
+                                videoAspectRatio = w / h
+                            }
                         }
                     }
                 }
@@ -380,6 +452,10 @@ struct VideoView: View {
                 let current = CMTimeGetSeconds(time)
                 if current.isFinite {
                     playbackProgress = current / playbackDuration
+                    if current >= playbackDuration - 0.1 {
+                        isPlaying = false
+                        showPlaybackOverlay = true
+                    }
                 }
             }
             timeObserver = observer
@@ -393,6 +469,28 @@ struct VideoView: View {
             player.removeTimeObserver(observer)
         }
         timeObserver = nil
+    }
+
+    private func togglePlayback() {
+        guard let player else { return }
+        if isPlaying {
+            player.pause()
+            isPlaying = false
+            showPlaybackOverlay = true
+        } else {
+            // If at the end, restart from beginning
+            if playbackProgress >= 0.99 {
+                seekVideo(to: 0)
+            }
+            player.play()
+            isPlaying = true
+            showPlaybackOverlay = true
+            // Hide overlay after a short delay
+            Task {
+                try? await Task.sleep(for: .seconds(0.6))
+                showPlaybackOverlay = false
+            }
+        }
     }
 
     private func seekVideo(to timestamp: TimeInterval) {
