@@ -3,6 +3,8 @@ import SwiftData
 
 extension Color {
     static let warmBg = Color(red: 0.96, green: 0.95, blue: 0.93)
+
+    static let darkInk = Color(red: 0.22, green: 0.27, blue: 0.36)
 }
 
 struct HomeView: View {
@@ -18,17 +20,44 @@ struct HomeView: View {
             ZStack {
                 Color.warmBg.ignoresSafeArea()
 
-                if filteredSongs.isEmpty {
-                    ContentUnavailableView("No songs yet",
-                                           systemImage: "music.note.list",
-                                           description: Text("Tap + to create your first song."))
-                } else {
+                VStack(spacing: 0) {
+                    Text("Songbook")
+                        .font(.custom("Cochin", size: 36))
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 24)
+                        .padding(.bottom, 14)
+
+                    Rectangle()
+                        .fill(Color.darkInk.opacity(0.1))
+                        .frame(height: 1)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+
                     ScrollView {
                         LazyVStack(spacing: 12) {
+                            Button {
+                                newTitle = ""
+                                showNewSongSheet = true
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(Color.darkInk.opacity(0.3))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(.white)
+                                            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("New Song")
+
                             ForEach(filteredSongs) { song in
                                 NavigationLink(value: song) {
                                     SongCard(song: song)
                                 }
+                                .buttonStyle(.plain)
                                 .contextMenu {
                                     Button(role: .destructive, action: { delete(song) }) {
                                         Label("Delete", systemImage: "trash")
@@ -41,11 +70,9 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("Songbook")
             .navigationDestination(for: Song.self) { song in
                 EditorView(song: song)
             }
-            .searchable(text: $search, placement: .navigationBarDrawer, prompt: "Search titles")
             .sheet(isPresented: $showNewSongSheet) {
                 NavigationStack {
                     Form {
@@ -68,27 +95,8 @@ struct HomeView: View {
                 }
                 .presentationDetents([.fraction(0.35)])
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarLeading) {
-                    EditButton()
-                        .foregroundStyle(.indigo)
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button(action: {
-                        newTitle = ""
-                        showNewSongSheet = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                    .tint(.indigo)
-                    .accessibilityLabel("New Song")
-                }
-            }
-            .toolbarBackground(Color.warmBg, for: .navigationBar)
+            .toolbar(.hidden, for: .navigationBar)
         }
-        .tint(.indigo)
     }
 
     private var filteredSongs: [Song] {
@@ -116,7 +124,7 @@ private struct SongCard: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(
                     LinearGradient(
-                        colors: [.indigo.opacity(0.7), .indigo.opacity(0.2)],
+                        colors: [Color.darkInk.opacity(0.7), Color.darkInk.opacity(0.2)],
                         startPoint: .top,
                         endPoint: .bottom
                     )

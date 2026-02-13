@@ -12,6 +12,7 @@ struct EditorView: View {
     @State private var inspireOptions: InspireOptions = .empty
     @State private var isGenerating = false
     @State private var selection: NSRange = .init(location: 0, length: 0)
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -49,20 +50,32 @@ struct EditorView: View {
     }
 
     private var titleRow: some View {
-        HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                }
+                .foregroundStyle(Color.darkInk)
+
+                Spacer()
+
+                Button {
+                    save()
+                } label: {
+                    if isSaving { ProgressView() } else { Text("Save") }
+                }
+                .foregroundStyle(Color.darkInk)
+                .fontWeight(.medium)
+                .disabled(isSaving)
+            }
+
             TextField("Title", text: $song.title)
                 .font(.system(.title2, design: .serif, weight: .bold))
                 .textInputAutocapitalization(.words)
                 .onChange(of: song.title) { _ in touch() }
-
-            Button {
-                save()
-            } label: {
-                if isSaving { ProgressView() } else { Text("Save") }
-            }
-            .foregroundStyle(.indigo)
-            .fontWeight(.medium)
-            .disabled(isSaving)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -97,7 +110,7 @@ struct EditorView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .tint(.indigo)
+            .tint(.darkInk)
             .disabled(isGenerating)
 
             Spacer()
