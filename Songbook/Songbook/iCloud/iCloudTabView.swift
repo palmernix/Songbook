@@ -4,6 +4,29 @@ import SwiftUI
 class EditorCoordinator {
     var songFile: SongFile?
     var folderURL: URL?
+    var folderStack: [URL] = []
+
+    var currentFolderURL: URL? { folderStack.last }
+    var isInSubfolder: Bool { folderStack.count > 1 }
+
+    func setRootFolder(_ url: URL) {
+        if folderStack.isEmpty || folderStack.first != url {
+            folderStack = [url]
+        }
+    }
+
+    func navigateToFolder(_ url: URL) {
+        withAnimation {
+            folderStack.append(url)
+        }
+    }
+
+    func navigateBackFromFolder() {
+        guard folderStack.count > 1 else { return }
+        withAnimation {
+            folderStack.removeLast()
+        }
+    }
 
     func openSong(_ songFile: SongFile, folderURL: URL) {
         withAnimation {

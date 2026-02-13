@@ -3,56 +3,46 @@ import SwiftUI
 struct BrowseView: View {
     var settingsStore: SettingsStore
 
-    @State private var resolvedURL: URL?
-    @State private var navigationPath = NavigationPath()
+    @Environment(EditorCoordinator.self) private var coordinator
     @State private var showSettings = false
     @State private var showFolderPicker = false
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            Group {
-                if let url = resolvedURL {
-                    BrowseFolderView(
-                        folderURL: url,
-                        folderName: url.lastPathComponent,
-                        isRoot: true,
-                        showSettings: $showSettings
-                    )
-                } else {
-                    noFolderState
-                }
-            }
-            .navigationDestination(for: FolderNode.self) { node in
+        Group {
+            if let url = coordinator.currentFolderURL {
                 BrowseFolderView(
-                    folderURL: node.url,
-                    folderName: node.name,
-                    isRoot: false,
+                    folderURL: url,
+                    folderName: url.lastPathComponent,
+                    isRoot: !coordinator.isInSubfolder,
                     showSettings: $showSettings
                 )
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsView(settingsStore: settingsStore)
-            }
-            .sheet(isPresented: $showFolderPicker) {
-                FolderPickerView { url in
-                    settingsStore.saveBookmark(for: url)
-                    resolveURL()
-                }
+                .id(url)
+            } else {
+                noFolderState
             }
         }
         .onAppear { resolveURL() }
         .onChange(of: settingsStore.bookmarkData) { resolveURL() }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(settingsStore: settingsStore)
+        }
+        .sheet(isPresented: $showFolderPicker) {
+            FolderPickerView { url in
+                settingsStore.saveBookmark(for: url)
+                resolveURL()
+            }
+        }
     }
 
     private func resolveURL() {
         guard let url = settingsStore.resolveBookmark() else {
             print("[BrowseView] resolveBookmark returned nil")
-            resolvedURL = nil
+            coordinator.folderStack = []
             return
         }
         let gained = url.startAccessingSecurityScopedResource()
         print("[BrowseView] Resolved URL: \(url.path), securityAccess=\(gained)")
-        resolvedURL = url
+        coordinator.setRootFolder(url)
     }
 
     private var noFolderState: some View {
@@ -111,7 +101,6 @@ struct BrowseFolderView: View {
     let isRoot: Bool
     @Binding var showSettings: Bool
 
-    @Environment(\.dismiss) private var dismiss
     @Environment(EditorCoordinator.self) private var coordinator
     @State private var node: FolderNode?
     @State private var isLoading = true
@@ -145,7 +134,6 @@ struct BrowseFolderView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
         .foregroundStyle(Color.darkInk)
         .task {
             await loadFolder()
@@ -191,7 +179,7 @@ struct BrowseFolderView: View {
 
             HStack {
                 if !isRoot {
-                    Button { dismiss() } label: {
+                    Button { coordinator.navigateBackFromFolder() } label: {
                         Image(systemName: "chevron.left")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(Color.darkInk)
@@ -291,7 +279,9 @@ struct BrowseFolderView: View {
                             }
                         }
                     } else {
-                        NavigationLink(value: child) {
+                        Button {
+                            coordinator.navigateToFolder(child.url)
+                        } label: {
                             FolderCard(name: child.name, itemCount: child.children.count)
                         }
                         .buttonStyle(.plain)
