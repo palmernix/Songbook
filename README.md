@@ -1,78 +1,77 @@
 # Songbook
-*A personal songwriting companion with AI lyric inspiration.*
+
+A personal songwriting companion for iOS.
 
 ---
 
 ## Overview
-**Songbook** is a SwiftUI app for writing, organizing, and refining song lyrics.  
-Each song has its own lyric sheet — simple, focused, and local-first.  
-An integrated AI “Inspire” button uses a lightweight FastAPI + LangChain backend to generate single-line lyric suggestions that match your personal writing style.
+
+Songbook is a SwiftUI app for writing, recording, and organizing songs. Each song is a collection of entries — lyrics, notes, audio recordings, and video — all in one place. An integrated "Inspire" feature uses a lightweight backend to generate lyric suggestions that match your personal writing style.
 
 ---
 
-## ✨ Features
+## Features
 
-### iOS App (`/app-ios`)
-- Built in **SwiftUI** with **SwiftData** for local persistence.
-- “Notes-style” lyric editor with section headers (Verse, Chorus, Bridge, etc.).
-- **Inspire** button for real-time lyric suggestions:
-  - Generates **one single-line** continuation.
-  - Context-aware (current section + full song text).
-  - Considers your **writing voice**, learned from saved songs.
-  - Optional user-defined parameters: rhyme scheme, syllable count, mood, style.
-- Local-first storage for single-user usage.
-    - Persistence via Firebase / iCloud as a future state if cross-device sync is a requirement.
+### Song Organization and Browser
+- Create and manage songs with multiple entry types per song (lyrics, notes, audio, video).
+- Two storage modes: **local** (SwiftData) or **iCloud Drive** with folder-based organization.
+- Custom `.songbook` file format with Quick Look thumbnails and deep linking — tap a `.songbook` file in iCloud Drive to open it directly in the app.
 
-### Backend API (`/lyric-engine`)
-- Built with **FastAPI** + **LangChain** + **Chroma** vector database.
-- `/suggest` → returns a single lyric suggestion.
-- `/ingest/snapshot` → embeds and stores all lines from a saved song.
-- Uses **OpenAI GPT-4o-mini** for generation and **text-embedding-3-small** for style embeddings.
-- Retrieves similar lines from your personal catalog (“your-voice memory”) + optional reference material for stylistic influence.
-- Stateless for song text — only embeddings + metadata are stored.
-- Deployable to **Google Cloud Run**
+### Lyrics Editor
+- Rich text editing with bold, italic, underline, and heading levels (H1–H3).
+- Bullet lists with automatic continuation, indentation, and smart removal.
+- Live word count.
 
-### Data Flow
-1. You write lyrics → press **Save** → iOS app sends snapshot to `/ingest/snapshot`.
-2. Backend splits text into lines → embeds → upserts into Chroma (vector DB).
-3. When you press **Inspire**, app sends `/suggest` with current lyrics + context.
-4. Backend retrieves stylistically similar lines + reference examples → builds a prompt → calls GPT-4o-mini → returns one new line.
+### Notes
+- Same rich text editor as lyrics, for freeform ideas, structure notes, or anything else.
+
+### Audio
+- Record directly in-app or import audio files.
+- Waveform visualization with scrubbing.
+- Timestamped comments — mark moments and tap to seek back to them.
+
+### Video
+- Record video or import from the photo library.
+- Custom player with aspect-ratio-aware layout.
+- Timestamped comments, same as audio.
+
+### Inspire
+- AI lyric suggestions from the lyrics editor toolbar.
+- Uses your songwriting voice and specified lyrical references to help you come up with your next word, line, or more.
+- Context-aware: considers the current line, surrounding stanza, and full song text.
+- Optional parameters for style, mood, rhyme scheme, syllable count, and section type.
+- Preview suggestions before inserting, with options to refine or regenerate.
 
 ---
 
-### 🧱 Architecture
-song-spark/
+## Architecture
+
+```
+Songbook/
+├── ios/                # SwiftUI iOS app
+│   ├── Songbook.xcodeproj
+│   ├── Songbook/           # App source
+│   ├── SongbookTests/
+│   ├── SongbookUITests/
+│   └── SongbookThumbnail/  # Quick Look thumbnail extension
 │
-├── app-ios/           # SwiftUI + SwiftData iOS app
-│   ├── SongSpark.xcodeproj
-│   ├── Sources/
-│   └── …
-│
-├── lyric-engine/      # FastAPI backend
+├── lyric-engine/       # FastAPI backend
 │   ├── main.py
-│   ├── pyproject.toml (Poetry)
-│   ├── .env (not committed)
-│   ├── chroma_db/ (vector store)
-│   └── …
+│   ├── pyproject.toml
+│   └── ...
 │
-├── contracts/         # Shared schemas / prompts (optional)
-│
-├── .gitignore
+├── Makefile
 ├── LICENSE
 └── README.md
+```
 
----
-
-## 🧰 Tech Stack
+## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| iOS app | SwiftUI, SwiftData |
+| iOS app | SwiftUI, SwiftData, AVFoundation |
 | Backend | Python, FastAPI, LangChain |
 | Embeddings | OpenAI `text-embedding-3-small` |
 | LLM | OpenAI `gpt-4o-mini` |
 | Vector DB | Chroma |
 | Hosting | Google Cloud Run |
-| Dependency management | Poetry |
-| Version control | GitHub monorepo |
-
