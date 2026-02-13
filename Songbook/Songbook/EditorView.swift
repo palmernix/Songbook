@@ -14,37 +14,21 @@ struct EditorView: View {
     @State private var selection: NSRange = .init(location: 0, length: 0)
 
     var body: some View {
-        VStack(spacing: 0) {
-            titleField
-            Divider()
-            CursorTextEditor(text: $song.text, selectedRange: $selection)
-                .font(.system(.body, design: .default))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .scrollContentBackground(.hidden)
-                .background(Color(.systemBackground))
-                .onChange(of: song.text) { _ in touch() }
-            Divider()
-            bottomBar
-        }
-        .navigationTitle("Editor")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    save()
-                } label: {
-                    if isSaving { ProgressView() } else { Text("Save") }
-                }
-                .disabled(isSaving)
+        ZStack {
+            Color.warmBg.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                titleRow
+                editorCard
+                bottomBar
             }
         }
+        .navigationBarHidden(true)
         .sheet(isPresented: $showInspire) {
             SuggestionSheet(
                 suggestion: $suggestion,
                 isLoading: isGenerating,
                 onRefine: {
-                    // Close the suggestion sheet, open options prefilled with last choices
                     showInspire = false
                     showOptions = true
                 },
@@ -53,7 +37,7 @@ struct EditorView: View {
                 },
                 onInsert: {
                     insertSuggestion()
-                    showInspire = false   // dismiss after insert
+                    showInspire = false
                 },
                 onCancel: {
                     showInspire = false
@@ -64,13 +48,39 @@ struct EditorView: View {
         .onAppear { if song.title.isEmpty { song.title = "Untitled" } }
     }
 
-    private var titleField: some View {
-        TextField("Title", text: $song.title)
-            .font(.title2.weight(.semibold))
-            .textInputAutocapitalization(.words)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .onChange(of: song.title) { _ in touch() }
+    private var titleRow: some View {
+        HStack(alignment: .firstTextBaseline) {
+            TextField("Title", text: $song.title)
+                .font(.system(.title2, design: .serif, weight: .bold))
+                .textInputAutocapitalization(.words)
+                .onChange(of: song.title) { _ in touch() }
+
+            Button {
+                save()
+            } label: {
+                if isSaving { ProgressView() } else { Text("Save") }
+            }
+            .foregroundStyle(.indigo)
+            .fontWeight(.medium)
+            .disabled(isSaving)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+    }
+
+    private var editorCard: some View {
+        CursorTextEditor(text: $song.text, selectedRange: $selection)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
+            )
+            .padding(.horizontal, 16)
+            .onChange(of: song.text) { _ in touch() }
     }
 
     private var bottomBar: some View {
@@ -83,20 +93,20 @@ struct EditorView: View {
                         .padding(.horizontal, 4)
                 } else {
                     Label("Inspire", systemImage: "sparkles")
+                        .font(.subheadline.weight(.medium))
                 }
             }
             .buttonStyle(.borderedProminent)
+            .tint(.indigo)
             .disabled(isGenerating)
 
             Spacer()
             Text(wordCountString)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.thinMaterial)
-        // Present options first
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
         .sheet(isPresented: $showOptions) {
             InspireOptionsSheet(options: inspireOptions) { chosen in
                 inspireOptions = chosen
@@ -119,7 +129,6 @@ struct EditorView: View {
 
             showInspire = true
         } catch {
-            // Handle the error - you might want to show an alert or set a default message
             suggestion = "Sorry, couldn't generate a suggestion right now. Please try again."
             showInspire = true
         }
@@ -146,7 +155,7 @@ struct EditorView: View {
 
         if !song.text.hasSuffix(" ") && !suggestion.hasPrefix(" ") && !song.text.isEmpty {
             song.text.append(" ")
-        }     
+        }
 
         song.text.append(suggestion)
         suggestion = ""
@@ -163,29 +172,25 @@ struct EditorView: View {
                 userLyrics: currentLineAtCaret(),
                 contextFocus: currentStanzaAtCaret(),
                 contextFull: song.text,
-                options: inspireOptions   // reuse last chosen options
+                options: inspireOptions
             )
             suggestion = s
         } catch {
-            suggestion = "⚠️ Sorry, couldn't generate a suggestion right now."
+            suggestion = "Sorry, couldn't generate a suggestion right now."
         }
     }
 
     // Helpers to capture context
     private func currentLineAtCaret() -> String {
         let ns = song.text as NSString
-        // Use end of selection (caret if nothing selected)
         var pos = selection.location + selection.length
         pos = max(0, min(pos, ns.length))
 
-        // FAST PATH: if the text before the caret ends with a newline, the current line is empty
         if pos > 0, ns.character(at: pos - 1) == 10 { // '\n'
             return ""
         }
 
-        // Consider only the text *before* the caret
         let before = ns.substring(to: pos) as NSString
-        // Find last newline in 'before'
         let lastNL = before.range(of: "\n", options: .backwards)
         let lineStart = (lastNL.location == NSNotFound) ? 0 : lastNL.location + 1
 
@@ -196,12 +201,10 @@ struct EditorView: View {
     private func currentStanzaAtCaret() -> String {
         let lines = song.text.components(separatedBy: "\n")
 
-        // caret line index
         let loc = min(selection.location, (song.text as NSString).length)
         let caret = song.text.index(song.text.startIndex, offsetBy: loc)
         let caretLineIndex = song.text[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
 
-        // expand up/down until a blank line
         var start = caretLineIndex
         while start > 0 && !lines[start - 1].trimmingCharacters(in: .whitespaces).isEmpty {
             start -= 1
@@ -233,7 +236,6 @@ private struct SuggestionSheet: View {
             Text("Suggestion")
                 .font(.headline)
 
-            // Read-only display (cleaner than editing the text in-place)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
@@ -268,7 +270,7 @@ private struct SuggestionSheet: View {
             }
             .buttonStyle(.bordered)
             .font(.body)
-            .minimumScaleFactor(0.8) // Shrinks text slightly if needed
+            .minimumScaleFactor(0.8)
             .lineLimit(1)
         }
         .padding()
