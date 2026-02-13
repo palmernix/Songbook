@@ -131,12 +131,16 @@ struct VideoView: View {
             player?.pause()
         }
         .onChange(of: videoData) { preparePlayer() }
-        .sheet(isPresented: $showCameraPicker) {
+        .fullScreenCover(isPresented: $showCameraPicker) {
             VideoCameraPicker { data in
                 videoData = data
                 videoComments = nil
                 onSave()
             }
+            .ignoresSafeArea()
+            .statusBarHidden(true)
+            .onAppear { OrientationLock.lock(.portrait) }
+            .onDisappear { OrientationLock.unlock() }
         }
         .sheet(isPresented: $showPhotosPicker) {
             VideoPhotosPicker { data in
@@ -517,6 +521,7 @@ private struct VideoCameraPicker: UIViewControllerRepresentable {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.mediaTypes = ["public.movie"]
+        picker.cameraCaptureMode = .video
         picker.videoQuality = .typeMedium
         picker.delegate = context.coordinator
         return picker
