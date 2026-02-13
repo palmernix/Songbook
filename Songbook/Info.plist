@@ -4,5 +4,47 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Songbook uses the microphone to record audio for your songs.</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.palmernix.songbook</string>
+			<key>UTTypeDescription</key>
+			<string>Songbook Song</string>
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>DocumentIcon</string>
+			</array>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>songbook</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Songbook Song</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.palmernix.songbook</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
