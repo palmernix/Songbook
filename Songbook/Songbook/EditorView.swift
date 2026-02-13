@@ -1,17 +1,20 @@
 import SwiftUI
+import UIKit
 
 struct LyricsView: View {
     @Binding var title: String
     @Binding var text: String
+    @Binding var formattedTextData: Data?
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
+    @State private var context = RichTextContext()
+    @State private var didLoad = false
     @State private var showInspire = false
     @State private var suggestion: String = ""
     @State private var showOptions = false
     @State private var inspireOptions: InspireOptions = .empty
     @State private var isGenerating = false
-    @State private var selection: NSRange = .init(location: 0, length: 0)
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -21,7 +24,6 @@ struct LyricsView: View {
             VStack(spacing: 0) {
                 titleRow
                 editorCard
-                bottomBar
             }
         }
         .navigationBarHidden(true)
@@ -46,9 +48,32 @@ struct LyricsView: View {
             )
             .presentationDetents([.fraction(0.35), .medium, .large])
         }
-        .onAppear { if title.isEmpty { title = "Untitled" } }
+        .onAppear {
+            if title.isEmpty { title = "Untitled" }
+            loadFormattedText()
+        }
         .onChange(of: title) { onSave() }
-        .onChange(of: text) { onSave() }
+    }
+
+    private func loadFormattedText() {
+        guard !didLoad else { return }
+        didLoad = true
+
+        if let decoded = RichTextStorage.decode(formattedTextData) {
+            context.attributedText = decoded
+        } else if !text.isEmpty {
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 17),
+                .foregroundColor: UIColor(Color.darkInk)
+            ]
+            context.attributedText = NSAttributedString(string: text, attributes: attrs)
+        }
+
+        context.onChangeHandler = { [context] in
+            text = context.attributedText.string
+            formattedTextData = RichTextStorage.encode(context.attributedText)
+            onSave()
+        }
     }
 
     private var titleRow: some View {
@@ -63,6 +88,31 @@ struct LyricsView: View {
                 .foregroundStyle(Color.darkInk)
 
                 Spacer()
+
+                Text(wordCountString)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+
+                Button {
+                    showOptions = true
+                } label: {
+                    if isGenerating {
+                        ProgressView()
+                            .padding(.horizontal, 4)
+                    } else {
+                        Label("Inspire", systemImage: "sparkles")
+                            .font(.subheadline.weight(.medium))
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.darkInk)
+                .disabled(isGenerating)
+                .sheet(isPresented: $showOptions) {
+                    InspireOptionsSheet(options: inspireOptions) { chosen in
+                        inspireOptions = chosen
+                        Task { await inspire(using: chosen) }
+                    }
+                }
             }
 
             TextField("Title", text: $title)
@@ -75,49 +125,28 @@ struct LyricsView: View {
         .padding(.bottom, 8)
     }
 
+    private let toolbarHeight: CGFloat = 44
+
     private var editorCard: some View {
-        CursorTextEditor(text: $text, selectedRange: $selection)
-            .scrollContentBackground(.hidden)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
-            )
-            .padding(.horizontal, 16)
-    }
+        ZStack(alignment: .bottom) {
+            RichTextEditor(context: context, bottomInset: toolbarHeight + 8)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
 
-    private var bottomBar: some View {
-        HStack {
-            Button {
-                showOptions = true
-            } label: {
-                if isGenerating {
-                    ProgressView()
-                        .padding(.horizontal, 4)
-                } else {
-                    Label("Inspire", systemImage: "sparkles")
-                        .font(.subheadline.weight(.medium))
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.darkInk)
-            .disabled(isGenerating)
-
-            Spacer()
-            Text(wordCountString)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.tertiary)
+            FormattingToolbar(context: context, showBullets: false)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .glassEffect(.regular.tint(Color.warmBg), in: .capsule)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 8)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
-        .sheet(isPresented: $showOptions) {
-            InspireOptionsSheet(options: inspireOptions) { chosen in
-                inspireOptions = chosen
-                Task { await inspire(using: chosen) }
-            }
-        }
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 4)
     }
 
     private func inspire(using options: InspireOptions) async {
@@ -128,7 +157,7 @@ struct LyricsView: View {
             suggestion = try await APIClient.shared.suggest(
                 userLyrics: currentLineAtCaret(),
                 contextFocus: currentStanzaAtCaret(),
-                contextFull: text,
+                contextFull: context.attributedText.string,
                 options: options
             )
 
@@ -140,18 +169,25 @@ struct LyricsView: View {
     }
 
     private var wordCountString: String {
-        let count = text.split { $0.isWhitespace || $0.isNewline }.count
+        let count = context.attributedText.string.split { $0.isWhitespace || $0.isNewline }.count
         return "\(count) words"
     }
 
     private func insertSuggestion() {
-        guard !suggestion.isEmpty else { return }
+        guard !suggestion.isEmpty, let textView = context.textView else { return }
 
-        if !text.hasSuffix(" ") && !suggestion.hasPrefix(" ") && !text.isEmpty {
-            text.append(" ")
+        let plainText = context.attributedText.string
+        var insertText = suggestion
+        if !plainText.hasSuffix(" ") && !suggestion.hasPrefix(" ") && !plainText.isEmpty {
+            insertText = " " + insertText
         }
 
-        text.append(suggestion)
+        let insertAttr = NSAttributedString(string: insertText, attributes: RichTextEditor.defaultAttributes)
+        let location = textView.selectedRange.location
+        textView.textStorage.insert(insertAttr, at: location)
+        textView.selectedRange = NSRange(location: location + insertAttr.length, length: 0)
+        context.notifyChange(textView)
+
         suggestion = ""
         showInspire = false
     }
@@ -164,7 +200,7 @@ struct LyricsView: View {
             let s = try await APIClient.shared.suggest(
                 userLyrics: currentLineAtCaret(),
                 contextFocus: currentStanzaAtCaret(),
-                contextFull: text,
+                contextFull: context.attributedText.string,
                 options: inspireOptions
             )
             suggestion = s
@@ -174,7 +210,9 @@ struct LyricsView: View {
     }
 
     private func currentLineAtCaret() -> String {
-        let ns = text as NSString
+        let plainText = context.attributedText.string
+        let ns = plainText as NSString
+        let selection = context.selectedRange
         var pos = selection.location + selection.length
         pos = max(0, min(pos, ns.length))
 
@@ -191,11 +229,13 @@ struct LyricsView: View {
     }
 
     private func currentStanzaAtCaret() -> String {
-        let lines = text.components(separatedBy: "\n")
+        let plainText = context.attributedText.string
+        let lines = plainText.components(separatedBy: "\n")
+        let selection = context.selectedRange
 
-        let loc = min(selection.location, (text as NSString).length)
-        let caret = text.index(text.startIndex, offsetBy: loc)
-        let caretLineIndex = text[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
+        let loc = min(selection.location, (plainText as NSString).length)
+        let caret = plainText.index(plainText.startIndex, offsetBy: loc)
+        let caretLineIndex = plainText[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
 
         var start = caretLineIndex
         while start > 0 && !lines[start - 1].trimmingCharacters(in: .whitespaces).isEmpty {

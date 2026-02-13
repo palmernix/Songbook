@@ -444,6 +444,7 @@ private struct SwiftDataLyricsEditor: View {
             LyricsView(
                 title: $song.entries[index].title,
                 text: $song.entries[index].text,
+                formattedTextData: $song.entries[index].formattedTextData,
                 onSave: {
                     song.entries[index].updatedAt = Date()
                     song.updatedAt = Date()
@@ -468,6 +469,7 @@ private struct SwiftDataNotesEditor: View {
             NotesView(
                 title: $song.entries[index].title,
                 text: $song.entries[index].text,
+                formattedTextData: $song.entries[index].formattedTextData,
                 onSave: {
                     song.entries[index].updatedAt = Date()
                     song.updatedAt = Date()

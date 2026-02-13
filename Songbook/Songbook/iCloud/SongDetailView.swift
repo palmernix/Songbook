@@ -269,6 +269,7 @@ private struct LyricsEntryEditor: View {
             LyricsView(
                 title: $songFile.entries[index].title,
                 text: $songFile.entries[index].text,
+                formattedTextData: $songFile.entries[index].formattedTextData,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()
@@ -299,6 +300,7 @@ private struct NotesEntryEditor: View {
             NotesView(
                 title: $songFile.entries[index].title,
                 text: $songFile.entries[index].text,
+                formattedTextData: $songFile.entries[index].formattedTextData,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()
