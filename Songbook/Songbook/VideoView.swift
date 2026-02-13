@@ -1,18 +1,72 @@
 import SwiftUI
 import AVKit
 
+// MARK: - Video Progress Bar
+
+struct VideoProgressBar: View {
+    @Binding var progress: Double
+    let comments: [MediaComment]
+    let duration: TimeInterval
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.darkInk.opacity(0.12))
+                    .frame(height: 4)
+
+                Capsule()
+                    .fill(Color.darkInk)
+                    .frame(width: max(0, progress * geo.size.width), height: 4)
+
+                if duration > 0 {
+                    ForEach(comments) { comment in
+                        let markerX = (comment.timestamp / duration) * geo.size.width
+                        Circle()
+                            .fill(Color.darkInk)
+                            .frame(width: 8, height: 8)
+                            .position(x: markerX, y: geo.size.height / 2)
+                    }
+                }
+            }
+            .frame(height: 12)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let newProgress = max(0, min(1, value.location.x / geo.size.width))
+                        progress = newProgress
+                    }
+            )
+        }
+        .frame(height: 12)
+    }
+}
+
+// MARK: - Video View
+
 struct VideoView: View {
     @Binding var title: String
     @Binding var videoData: Data?
+    @Binding var videoComments: [MediaComment]?
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
     @State private var showCameraPicker = false
     @State private var showPhotosPicker = false
     @State private var showReplaceMenu = false
+    @State private var showAddComment = false
+    @State private var newCommentText = ""
     @State private var player: AVPlayer?
+    @State private var playbackProgress: Double = 0
+    @State private var playbackDuration: TimeInterval = 0
+    @State private var timeObserver: Any?
 
     @Environment(\.dismiss) private var dismiss
+
+    private var sortedComments: [MediaComment] {
+        (videoComments ?? []).sorted { $0.timestamp < $1.timestamp }
+    }
 
     var body: some View {
         ZStack {
@@ -35,17 +89,39 @@ struct VideoView: View {
             if title.isEmpty { title = "Untitled" }
             preparePlayer()
         }
-        .onDisappear { player?.pause() }
+        .onDisappear {
+            removeTimeObserver()
+            player?.pause()
+        }
         .onChange(of: videoData) { preparePlayer() }
         .sheet(isPresented: $showCameraPicker) {
             VideoCameraPicker { data in
                 videoData = data
+                videoComments = nil
                 onSave()
             }
         }
         .sheet(isPresented: $showPhotosPicker) {
             VideoPhotosPicker { data in
                 videoData = data
+                videoComments = nil
+                onSave()
+            }
+        }
+        .alert("Comment at \(formatTime(playbackProgress * playbackDuration))", isPresented: $showAddComment) {
+            TextField("Your note...", text: $newCommentText)
+            Button("Cancel", role: .cancel) { newCommentText = "" }
+            Button("Add") {
+                let comment = MediaComment(
+                    timestamp: playbackProgress * playbackDuration,
+                    text: newCommentText
+                )
+                if videoComments == nil {
+                    videoComments = [comment]
+                } else {
+                    videoComments?.append(comment)
+                }
+                newCommentText = ""
                 onSave()
             }
         }
@@ -124,7 +200,7 @@ struct VideoView: View {
     // MARK: - Playback View
 
     private var playbackView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 0) {
             if let player {
                 VideoPlayer(player: player)
                     .aspectRatio(16/9, contentMode: .fit)
@@ -133,33 +209,145 @@ struct VideoView: View {
                     .padding(.top, 12)
             }
 
-            Menu {
-                Button {
-                    player?.pause()
-                    videoData = nil
-                    onSave()
-                    showCameraPicker = true
-                } label: {
-                    Label("Re-record", systemImage: "video.fill")
-                }
+            // Progress bar with markers + time labels
+            VStack(spacing: 4) {
+                VideoProgressBar(
+                    progress: $playbackProgress,
+                    comments: sortedComments,
+                    duration: playbackDuration
+                )
 
-                Button {
-                    player?.pause()
-                    showPhotosPicker = true
-                } label: {
-                    Label("Import from Photos", systemImage: "photo.on.rectangle")
+                HStack {
+                    Text(formatTime(playbackProgress * playbackDuration))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(formatTime(playbackDuration))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
                 }
-            } label: {
-                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.subheadline.weight(.medium))
             }
-            .tint(Color.darkInk)
+            .padding(.horizontal, 24)
+            .padding(.top, 10)
+            .onChange(of: playbackProgress) {
+                // When user scrubs via the progress bar, seek the video
+            }
+
+            // Buttons
+            VStack(spacing: 12) {
+                Button {
+                    showAddComment = true
+                } label: {
+                    Label("Add Comment", systemImage: "plus.bubble")
+                        .font(.subheadline.weight(.medium))
+                }
+                .tint(Color.darkInk)
+
+                Menu {
+                    Button {
+                        player?.pause()
+                        videoData = nil
+                        videoComments = nil
+                        onSave()
+                        showCameraPicker = true
+                    } label: {
+                        Label("Re-record", systemImage: "video.fill")
+                    }
+
+                    Button {
+                        player?.pause()
+                        showPhotosPicker = true
+                    } label: {
+                        Label("Import from Photos", systemImage: "photo.on.rectangle")
+                    }
+                } label: {
+                    Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.subheadline.weight(.medium))
+                }
+                .tint(Color.darkInk)
+            }
+            .padding(.top, 12)
+
+            // Comments list
+            if !sortedComments.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Rectangle()
+                        .fill(Color.darkInk.opacity(0.08))
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+
+                    HStack {
+                        Text("Comments")
+                            .font(.system(.caption, design: .serif, weight: .semibold))
+                            .foregroundStyle(Color.darkInk.opacity(0.4))
+                            .textCase(.uppercase)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
+                    List {
+                        ForEach(sortedComments) { comment in
+                            commentRow(comment)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparatorTint(Color.darkInk.opacity(0.06))
+                        }
+                        .onDelete { offsets in
+                            let sorted = sortedComments
+                            for offset in offsets {
+                                let id = sorted[offset].id
+                                videoComments?.removeAll { $0.id == id }
+                            }
+                            onSave()
+                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                }
+            }
+
+            Spacer(minLength: 0)
         }
     }
 
-    // MARK: - Helpers
+    private func commentRow(_ comment: MediaComment) -> some View {
+        Button {
+            seekVideo(to: comment.timestamp)
+            player?.play()
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Text(formatTime(comment.timestamp))
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(Color.darkInk.opacity(0.5))
+                    .frame(width: 36, alignment: .leading)
+
+                Text(comment.text)
+                    .font(.system(.subheadline, design: .serif))
+                    .foregroundStyle(Color.darkInk)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                videoComments?.removeAll { $0.id == comment.id }
+                onSave()
+            } label: {
+                Label("Delete Comment", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Player Setup
 
     private func preparePlayer() {
+        removeTimeObserver()
         guard let data = videoData else {
             player = nil
             return
@@ -169,10 +357,56 @@ struct VideoView: View {
             .appendingPathExtension("mov")
         do {
             try data.write(to: tempURL)
-            player = AVPlayer(url: tempURL)
+            let avPlayer = AVPlayer(url: tempURL)
+            player = avPlayer
+
+            // Get duration
+            let asset = avPlayer.currentItem?.asset
+            Task {
+                if let duration = try? await asset?.load(.duration) {
+                    let seconds = CMTimeGetSeconds(duration)
+                    if seconds.isFinite && seconds > 0 {
+                        await MainActor.run {
+                            playbackDuration = seconds
+                        }
+                    }
+                }
+            }
+
+            // Periodic time observer for progress tracking
+            let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
+            let observer = avPlayer.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+                guard playbackDuration > 0 else { return }
+                let current = CMTimeGetSeconds(time)
+                if current.isFinite {
+                    playbackProgress = current / playbackDuration
+                }
+            }
+            timeObserver = observer
         } catch {
             player = nil
         }
+    }
+
+    private func removeTimeObserver() {
+        if let observer = timeObserver, let player {
+            player.removeTimeObserver(observer)
+        }
+        timeObserver = nil
+    }
+
+    private func seekVideo(to timestamp: TimeInterval) {
+        let time = CMTime(seconds: timestamp, preferredTimescale: 600)
+        player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        playbackProgress = playbackDuration > 0 ? timestamp / playbackDuration : 0
+    }
+
+    // MARK: - Helpers
+
+    private func formatTime(_ time: TimeInterval) -> String {
+        let mins = Int(time) / 60
+        let secs = Int(time) % 60
+        return String(format: "%d:%02d", mins, secs)
     }
 }
 

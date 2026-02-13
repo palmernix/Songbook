@@ -391,6 +391,7 @@ private struct VideoEntryEditor: View {
             VideoView(
                 title: $songFile.entries[index].title,
                 videoData: $songFile.entries[index].videoData,
+                videoComments: $songFile.entries[index].videoComments,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()

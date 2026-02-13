@@ -547,6 +547,7 @@ private struct SwiftDataVideoEditor: View {
             VideoView(
                 title: $song.entries[index].title,
                 videoData: $song.entries[index].videoData,
+                videoComments: $song.entries[index].videoComments,
                 onSave: {
                     song.entries[index].updatedAt = Date()
                     song.updatedAt = Date()

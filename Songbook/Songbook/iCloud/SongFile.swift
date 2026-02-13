@@ -7,7 +7,7 @@ enum EntryType: String, Codable {
     case video
 }
 
-struct AudioComment: Identifiable, Hashable, Codable {
+struct MediaComment: Identifiable, Hashable, Codable {
     var id: UUID
     var timestamp: TimeInterval
     var text: String
@@ -26,13 +26,14 @@ struct SongEntry: Identifiable, Hashable, Codable {
     var text: String
     var audioData: Data?
     var waveformSamples: [Float]?
-    var audioComments: [AudioComment]?
+    var audioComments: [MediaComment]?
     var videoData: Data?
+    var videoComments: [MediaComment]?
     var formattedTextData: Data?
     var createdAt: Date
     var updatedAt: Date
 
-    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, waveformSamples: [Float]? = nil, audioComments: [AudioComment]? = nil, videoData: Data? = nil, formattedTextData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
+    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, waveformSamples: [Float]? = nil, audioComments: [MediaComment]? = nil, videoData: Data? = nil, videoComments: [MediaComment]? = nil, formattedTextData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.type = type
         self.title = title
@@ -41,6 +42,7 @@ struct SongEntry: Identifiable, Hashable, Codable {
         self.waveformSamples = waveformSamples
         self.audioComments = audioComments
         self.videoData = videoData
+        self.videoComments = videoComments
         self.formattedTextData = formattedTextData
         self.createdAt = createdAt
         self.updatedAt = updatedAt

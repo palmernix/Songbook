@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
 struct WaveformView: View {
     let samples: [Float]
     @Binding var progress: Double
-    var comments: [AudioComment] = []
+    var comments: [MediaComment] = []
     var duration: TimeInterval = 0
     var onScrub: ((Double) -> Void)? = nil
 
@@ -74,7 +74,7 @@ struct AudioView: View {
     @Binding var title: String
     @Binding var audioData: Data?
     @Binding var waveformSamples: [Float]?
-    @Binding var audioComments: [AudioComment]?
+    @Binding var audioComments: [MediaComment]?
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
@@ -95,7 +95,7 @@ struct AudioView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    private var sortedComments: [AudioComment] {
+    private var sortedComments: [MediaComment] {
         (audioComments ?? []).sorted { $0.timestamp < $1.timestamp }
     }
 
@@ -135,7 +135,7 @@ struct AudioView: View {
             TextField("Your note...", text: $newCommentText)
             Button("Cancel", role: .cancel) { newCommentText = "" }
             Button("Add") {
-                let comment = AudioComment(
+                let comment = MediaComment(
                     timestamp: playbackProgress * playbackDuration,
                     text: newCommentText
                 )
@@ -388,7 +388,7 @@ struct AudioView: View {
         }
     }
 
-    private func commentRow(_ comment: AudioComment) -> some View {
+    private func commentRow(_ comment: MediaComment) -> some View {
         Button {
             let newProgress = playbackDuration > 0 ? comment.timestamp / playbackDuration : 0
             playbackProgress = newProgress
