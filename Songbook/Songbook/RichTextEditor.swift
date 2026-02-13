@@ -389,6 +389,25 @@ struct RichTextEditor: UIViewRepresentable {
                 }
             }
 
+            // Backspace on empty bullet line — remove the bullet prefix
+            if text.isEmpty && range.length > 0 {
+                let nsText = textView.textStorage.string as NSString
+                let lineRange = nsText.lineRange(for: NSRange(location: range.location, length: 0))
+                let lineText = nsText.substring(with: lineRange).trimmingCharacters(in: .newlines)
+                if let bulletMatch = lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) {
+                    let contentAfterBullet = String(lineText[bulletMatch.upperBound...]).trimmingCharacters(in: .whitespaces)
+                    if contentAfterBullet.isEmpty {
+                        let prefixLength = (lineText as NSString).length
+                        let removeRange = NSRange(location: lineRange.location, length: min(prefixLength, nsText.length - lineRange.location))
+                        textView.textStorage.replaceCharacters(in: removeRange, with: "")
+                        textView.selectedRange = NSRange(location: lineRange.location, length: 0)
+                        context.isBulletList = false
+                        context.notifyChange(textView)
+                        return false
+                    }
+                }
+            }
+
             // Handle Return key for bullet continuation
             guard text == "\n" else { return true }
 
@@ -411,6 +430,7 @@ struct RichTextEditor: UIViewRepresentable {
                 let prefixLength = bulletPrefix.count
                 let removeRange = NSRange(location: lineRange.location, length: min(prefixLength, nsText.length - lineRange.location))
                 storage.replaceCharacters(in: removeRange, with: "")
+                textView.selectedRange = NSRange(location: lineRange.location, length: 0)
                 context.isBulletList = false
                 context.notifyChange(textView)
                 return false
