@@ -49,7 +49,6 @@ struct SongCard: View {
 
 struct FolderCard: View {
     let name: String
-    let itemCount: Int
 
     var body: some View {
         HStack(spacing: 12) {
@@ -57,16 +56,10 @@ struct FolderCard: View {
                 .font(.title3)
                 .foregroundStyle(Color.darkInk.opacity(0.4))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.system(.title3, design: .serif, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Text("\(itemCount) item\(itemCount == 1 ? "" : "s")")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
+            Text(name)
+                .font(.system(.title3, design: .serif, weight: .semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
 
             Spacer()
 
