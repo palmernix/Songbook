@@ -92,27 +92,6 @@ struct LyricsView: View {
                 Text(wordCountString)
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.tertiary)
-
-                Button {
-                    showOptions = true
-                } label: {
-                    if isGenerating {
-                        ProgressView()
-                            .padding(.horizontal, 4)
-                    } else {
-                        Label("Inspire", systemImage: "sparkles")
-                            .font(.subheadline.weight(.medium))
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.darkInk)
-                .disabled(isGenerating)
-                .sheet(isPresented: $showOptions) {
-                    InspireOptionsSheet(options: inspireOptions) { chosen in
-                        inspireOptions = chosen
-                        Task { await inspire(using: chosen) }
-                    }
-                }
             }
 
             TextField("Title", text: $title)
@@ -133,12 +112,23 @@ struct LyricsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
 
-            FormattingToolbar(context: context, showBullets: false)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .glassEffect(.regular.tint(Color.warmBg), in: .capsule)
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
+            FormattingToolbar(
+                context: context,
+                showBullets: false,
+                onInspire: { showOptions = true },
+                isGenerating: isGenerating
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .glassEffect(.regular.tint(Color.warmBg), in: .capsule)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
+            .sheet(isPresented: $showOptions) {
+                InspireOptionsSheet(options: inspireOptions) { chosen in
+                    inspireOptions = chosen
+                    Task { await inspire(using: chosen) }
+                }
+            }
         }
         .background(
             RoundedRectangle(cornerRadius: 16)

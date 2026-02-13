@@ -353,6 +353,8 @@ struct RichTextEditor: UIViewRepresentable {
 struct FormattingToolbar: View {
     var context: RichTextContext
     var showBullets: Bool = true
+    var onInspire: (() -> Void)? = nil
+    var isGenerating: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -367,6 +369,23 @@ struct FormattingToolbar: View {
                     .frame(width: 0.5, height: 20)
                     .padding(.horizontal, 4)
                 formatButton(icon: "list.bullet", isActive: context.isBulletList) { context.toggleBullet() }
+            }
+            if let onInspire {
+                Rectangle()
+                    .fill(Color(.separator))
+                    .frame(width: 0.5, height: 20)
+                    .padding(.horizontal, 4)
+                Button(action: onInspire) {
+                    if isGenerating {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("Inspire", systemImage: "sparkles")
+                            .font(.subheadline.weight(.medium))
+                    }
+                }
+                .foregroundStyle(Color(.label))
+                .disabled(isGenerating)
             }
         }
         .frame(maxWidth: .infinity)
