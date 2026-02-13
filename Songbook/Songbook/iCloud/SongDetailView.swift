@@ -333,6 +333,7 @@ private struct AudioEntryEditor: View {
             AudioView(
                 title: $songFile.entries[index].title,
                 audioData: $songFile.entries[index].audioData,
+                waveformSamples: $songFile.entries[index].waveformSamples,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()

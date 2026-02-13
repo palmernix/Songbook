@@ -2,9 +2,63 @@ import SwiftUI
 import AVFoundation
 import UniformTypeIdentifiers
 
+// MARK: - Waveform View
+
+struct WaveformView: View {
+    let samples: [Float]
+    @Binding var progress: Double
+    var onScrub: ((Double) -> Void)? = nil
+
+    var body: some View {
+        GeometryReader { geo in
+            let barCount = samples.count
+            let totalSpacing = CGFloat(barCount - 1) * 1.5
+            let barWidth = max(2, (geo.size.width - totalSpacing) / CGFloat(barCount))
+            let midY = geo.size.height / 2
+
+            Canvas { context, size in
+                for (index, sample) in samples.enumerated() {
+                    let x = CGFloat(index) * (barWidth + 1.5)
+                    let amplitude = CGFloat(sample) * midY * 0.9
+                    let barHeight = max(barWidth, amplitude * 2)
+
+                    let rect = CGRect(
+                        x: x,
+                        y: midY - barHeight / 2,
+                        width: barWidth,
+                        height: barHeight
+                    )
+
+                    let progressX = progress * size.width
+                    let color: Color = x + barWidth <= progressX
+                        ? .darkInk
+                        : .darkInk.opacity(0.2)
+
+                    context.fill(
+                        Path(roundedRect: rect, cornerRadius: barWidth / 2),
+                        with: .color(color)
+                    )
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let newProgress = max(0, min(1, value.location.x / geo.size.width))
+                        progress = newProgress
+                        onScrub?(newProgress)
+                    }
+            )
+        }
+    }
+}
+
+// MARK: - Audio View
+
 struct AudioView: View {
     @Binding var title: String
     @Binding var audioData: Data?
+    @Binding var waveformSamples: [Float]?
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
@@ -47,6 +101,7 @@ struct AudioView: View {
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker { data in
                 audioData = data
+                waveformSamples = Self.extractWaveform(from: data)
                 onSave()
             }
         }
@@ -165,10 +220,6 @@ struct AudioView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "waveform")
-                .font(.system(size: 48))
-                .foregroundStyle(Color.darkInk.opacity(0.3))
-
             // Play/pause button
             Button {
                 if isPlaying { pausePlayback() } else { startPlayback() }
@@ -178,10 +229,21 @@ struct AudioView: View {
                     .foregroundStyle(Color.darkInk)
             }
 
-            // Progress
+            // Waveform or progress fallback
             VStack(spacing: 4) {
-                ProgressView(value: playbackProgress)
-                    .tint(Color.darkInk)
+                if let samples = waveformSamples, !samples.isEmpty {
+                    WaveformView(
+                        samples: samples,
+                        progress: $playbackProgress,
+                        onScrub: { newProgress in
+                            seekPlayback(to: newProgress)
+                        }
+                    )
+                    .frame(height: 48)
+                } else {
+                    ProgressView(value: playbackProgress)
+                        .tint(Color.darkInk)
+                }
 
                 HStack {
                     Text(formatTime(playbackProgress * playbackDuration))
@@ -200,6 +262,7 @@ struct AudioView: View {
                 Button {
                     stopPlayback()
                     audioData = nil
+                    waveformSamples = nil
                     onSave()
                     startRecording()
                 } label: {
@@ -269,6 +332,7 @@ struct AudioView: View {
 
         if let data = try? Data(contentsOf: rec.url) {
             audioData = data
+            waveformSamples = Self.extractWaveform(from: data)
             onSave()
         }
 
@@ -327,6 +391,81 @@ struct AudioView: View {
         playbackProgress = 0
         playbackTimer?.invalidate()
         playbackTimer = nil
+    }
+
+    private func seekPlayback(to progress: Double) {
+        guard let p = player else { return }
+        let time = progress * p.duration
+        p.currentTime = time
+        if !isPlaying {
+            playbackDuration = p.duration
+        }
+    }
+
+    // MARK: - Waveform Extraction
+
+    static func extractWaveform(from audioData: Data, sampleCount: Int = 80) -> [Float]? {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("m4a")
+
+        do {
+            try audioData.write(to: tempURL)
+        } catch {
+            return nil
+        }
+
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        do {
+            let file = try AVAudioFile(forReading: tempURL)
+            guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: file.fileFormat.sampleRate, channels: 1, interleaved: false) else {
+                return nil
+            }
+
+            let frameCount = AVAudioFrameCount(file.length)
+            guard frameCount > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+                return nil
+            }
+
+            try file.read(into: buffer)
+
+            guard let channelData = buffer.floatChannelData?[0] else {
+                return nil
+            }
+
+            let totalFrames = Int(buffer.frameLength)
+            let chunkSize = max(1, totalFrames / sampleCount)
+            var samples: [Float] = []
+
+            for i in 0..<sampleCount {
+                let start = i * chunkSize
+                let end = min(start + chunkSize, totalFrames)
+                guard start < totalFrames else {
+                    samples.append(0)
+                    continue
+                }
+
+                var maxAmplitude: Float = 0
+                for j in start..<end {
+                    let amplitude = abs(channelData[j])
+                    if amplitude > maxAmplitude {
+                        maxAmplitude = amplitude
+                    }
+                }
+                samples.append(maxAmplitude)
+            }
+
+            // Normalize to 0...1
+            let peak = samples.max() ?? 1
+            if peak > 0 {
+                samples = samples.map { $0 / peak }
+            }
+
+            return samples
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - Helpers

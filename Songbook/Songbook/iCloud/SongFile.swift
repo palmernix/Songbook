@@ -13,17 +13,19 @@ struct SongEntry: Identifiable, Hashable, Codable {
     var title: String
     var text: String
     var audioData: Data?
+    var waveformSamples: [Float]?
     var videoData: Data?
     var formattedTextData: Data?
     var createdAt: Date
     var updatedAt: Date
 
-    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, videoData: Data? = nil, formattedTextData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
+    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, waveformSamples: [Float]? = nil, videoData: Data? = nil, formattedTextData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.type = type
         self.title = title
         self.text = text
         self.audioData = audioData
+        self.waveformSamples = waveformSamples
         self.videoData = videoData
         self.formattedTextData = formattedTextData
         self.createdAt = createdAt

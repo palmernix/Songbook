@@ -495,6 +495,7 @@ private struct SwiftDataAudioEditor: View {
             AudioView(
                 title: $song.entries[index].title,
                 audioData: $song.entries[index].audioData,
+                waveformSamples: $song.entries[index].waveformSamples,
                 onSave: {
                     song.entries[index].updatedAt = Date()
                     song.updatedAt = Date()
