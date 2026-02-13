@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+extension Color {
+    static let warmBg = Color(red: 0.96, green: 0.95, blue: 0.93)
+}
+
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Song.updatedAt, order: .reverse) private var songs: [Song]
@@ -11,26 +15,32 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            ZStack {
+                Color.warmBg.ignoresSafeArea()
+
                 if filteredSongs.isEmpty {
                     ContentUnavailableView("No songs yet",
                                            systemImage: "music.note.list",
                                            description: Text("Tap + to create your first song."))
                 } else {
-                    ForEach(filteredSongs) { song in
-                        NavigationLink(value: song) {
-                            SongCard(song: song)
-                        }
-                        .contextMenu {
-                            Button(role: .destructive, action: { delete(song) }) {
-                                Label("Delete", systemImage: "trash")
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(filteredSongs) { song in
+                                NavigationLink(value: song) {
+                                    SongCard(song: song)
+                                }
+                                .contextMenu {
+                                    Button(role: .destructive, action: { delete(song) }) {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                     }
-                    .onDelete(perform: deleteOffsets)
                 }
             }
-            .listStyle(.insetGrouped)
             .navigationTitle("Songbook")
             .navigationDestination(for: Song.self) { song in
                 EditorView(song: song)
@@ -61,6 +71,7 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     EditButton()
+                        .foregroundStyle(.indigo)
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button(action: {
@@ -68,11 +79,16 @@ struct HomeView: View {
                         showNewSongSheet = true
                     }) {
                         Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.hierarchical)
                     }
+                    .tint(.indigo)
                     .accessibilityLabel("New Song")
                 }
             }
+            .toolbarBackground(Color.warmBg, for: .navigationBar)
         }
+        .tint(.indigo)
     }
 
     private var filteredSongs: [Song] {
@@ -90,32 +106,57 @@ struct HomeView: View {
         context.delete(song)
         try? context.save()
     }
-
-    private func deleteOffsets(_ offsets: IndexSet) {
-        for idx in offsets { context.delete(filteredSongs[idx]) }
-        try? context.save()
-    }
 }
 
 private struct SongCard: View {
     let song: Song
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(song.title.isEmpty ? "Untitled" : song.title)
-                    .font(.headline)
-                    .lineLimit(1)
-                Spacer()
-                Text(Self.dateFormatter.string(from: song.updatedAt))
-                    .font(.caption)
+        HStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(
+                    LinearGradient(
+                        colors: [.indigo.opacity(0.7), .indigo.opacity(0.2)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 3)
+                .padding(.vertical, 8)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(song.title.isEmpty ? "Untitled" : song.title)
+                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Text(Self.relativeDateFormatter.localizedString(
+                        for: song.updatedAt, relativeTo: Date()))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+                }
+                .padding(.bottom, 6)
+
+                Text(snippet(from: song.text))
+                    .font(.system(.subheadline, design: .serif))
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .lineSpacing(3)
             }
-            Text(snippet(from: song.text))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            .padding(.leading, 12)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        )
     }
 
     private func snippet(from text: String) -> String {
@@ -123,10 +164,9 @@ private struct SongCard: View {
         return trimmed.isEmpty ? "—" : trimmed
     }
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .short
-        f.timeStyle = .short
+    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .abbreviated
         return f
     }()
 }
