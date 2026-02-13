@@ -362,6 +362,7 @@ private struct SwiftDataSongDetailView: View {
                 }
             }
             .foregroundStyle(.white)
+            .listSectionSpacing(.compact)
             .navigationTitle("New Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
