@@ -24,9 +24,9 @@ enum RichTextStorage {
 // MARK: - Heading Level
 
 enum HeadingLevel: String, CaseIterable {
-    case h1 = "H1"
-    case h2 = "H2"
-    case h3 = "H3"
+    case h3 = "Heading 3"
+    case h2 = "Heading 2"
+    case h1 = "Heading 1"
     case body = "Body"
 
     var fontSize: CGFloat {
