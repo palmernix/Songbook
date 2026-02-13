@@ -23,6 +23,8 @@ private class SwiftDataCoordinator {
 // MARK: - Home View
 
 struct HomeView: View {
+    var settingsStore: SettingsStore
+
     @State private var coordinator = SwiftDataCoordinator()
 
     var body: some View {
@@ -32,7 +34,7 @@ struct HomeView: View {
                     .id(song.id)
                     .transition(.move(edge: .trailing))
             } else {
-                SwiftDataBrowseView(coordinator: coordinator)
+                SwiftDataBrowseView(settingsStore: settingsStore, coordinator: coordinator)
                     .transition(.move(edge: .leading))
             }
         }
@@ -42,12 +44,14 @@ struct HomeView: View {
 // MARK: - Browse View
 
 private struct SwiftDataBrowseView: View {
+    var settingsStore: SettingsStore
     var coordinator: SwiftDataCoordinator
 
     @Environment(\.modelContext) private var context
     @Query(sort: \Song.updatedAt, order: .reverse) private var songs: [Song]
 
     @State private var showNewSongSheet = false
+    @State private var showSettings = false
     @State private var newTitle = ""
 
     var body: some View {
@@ -85,14 +89,29 @@ private struct SwiftDataBrowseView: View {
         .sheet(isPresented: $showNewSongSheet) {
             newSongSheet
         }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(settingsStore: settingsStore)
+        }
     }
 
     private var header: some View {
-        Text("Songbook")
-            .font(.custom("Cochin", size: 36))
-            .frame(maxWidth: .infinity)
-            .padding(.top, 24)
-            .padding(.bottom, 14)
+        ZStack {
+            Text("Songbook")
+                .font(.custom("Cochin", size: 36))
+
+            HStack {
+                Spacer()
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(.body)
+                        .foregroundStyle(Color.darkInk.opacity(0.5))
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 24)
+        .padding(.bottom, 14)
     }
 
     private var divider: some View {
