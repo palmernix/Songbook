@@ -337,6 +337,10 @@ struct AudioView: View {
                         .font(.subheadline.weight(.medium))
                 }
                 .tint(Color.darkInk)
+
+                if sortedComments.isEmpty {
+                    Spacer()
+                }
             }
 
             // Comments list
@@ -359,21 +363,24 @@ struct AudioView: View {
                     .padding(.top, 12)
                     .padding(.bottom, 4)
 
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            ForEach(sortedComments) { comment in
-                                commentRow(comment)
-
-                                if comment.id != sortedComments.last?.id {
-                                    Rectangle()
-                                        .fill(Color.darkInk.opacity(0.06))
-                                        .frame(height: 1)
-                                        .padding(.leading, 58)
-                                }
-                            }
+                    List {
+                        ForEach(sortedComments) { comment in
+                            commentRow(comment)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparatorTint(Color.darkInk.opacity(0.06))
                         }
-                        .padding(.horizontal, 8)
+                        .onDelete { offsets in
+                            let sorted = sortedComments
+                            for offset in offsets {
+                                let id = sorted[offset].id
+                                audioComments?.removeAll { $0.id == id }
+                            }
+                            onSave()
+                        }
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
 
@@ -386,6 +393,7 @@ struct AudioView: View {
             let newProgress = playbackDuration > 0 ? comment.timestamp / playbackDuration : 0
             playbackProgress = newProgress
             seekPlayback(to: newProgress)
+            if !isPlaying { startPlayback() }
         } label: {
             HStack(alignment: .top, spacing: 10) {
                 Text(formatTime(comment.timestamp))
@@ -487,29 +495,45 @@ struct AudioView: View {
             return
         }
 
+        // Resume existing player if paused
+        if let p = player {
+            p.currentTime = playbackProgress * p.duration
+            p.play()
+            isPlaying = true
+            startPlaybackTimer()
+            return
+        }
+
         do {
             let p = try AVAudioPlayer(data: data)
             p.prepareToPlay()
             playbackDuration = p.duration
+            if playbackProgress > 0 {
+                p.currentTime = playbackProgress * p.duration
+            }
             p.play()
             player = p
             isPlaying = true
-
-            let timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-                guard let p = player else { return }
-                if p.isPlaying {
-                    playbackProgress = p.duration > 0 ? p.currentTime / p.duration : 0
-                } else {
-                    playbackProgress = 0
-                    isPlaying = false
-                    playbackTimer?.invalidate()
-                    playbackTimer = nil
-                }
-            }
-            playbackTimer = timer
+            startPlaybackTimer()
         } catch {
             return
         }
+    }
+
+    private func startPlaybackTimer() {
+        playbackTimer?.invalidate()
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            guard let p = player else { return }
+            if p.isPlaying {
+                playbackProgress = p.duration > 0 ? p.currentTime / p.duration : 0
+            } else {
+                playbackProgress = 0
+                isPlaying = false
+                playbackTimer?.invalidate()
+                playbackTimer = nil
+            }
+        }
+        playbackTimer = timer
     }
 
     private func pausePlayback() {
