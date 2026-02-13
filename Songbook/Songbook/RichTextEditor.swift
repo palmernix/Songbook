@@ -150,6 +150,9 @@ class RichTextContext {
             isBulletList = true
         }
         storage.endEditing()
+        // Move cursor past the inserted bullet prefix
+        let cursorPos = textView.selectedRange.location + 2
+        textView.selectedRange = NSRange(location: cursorPos, length: 0)
         notifyChange(textView)
     }
 
@@ -190,7 +193,7 @@ class RichTextContext {
         let text = textView.textStorage.string as NSString
         let lineRange = text.lineRange(for: NSRange(location: range.location, length: 0))
         let lineText = text.substring(with: lineRange)
-        isBulletList = lineText.hasPrefix("\u{2022}\t")
+        isBulletList = lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) != nil
     }
 
     // MARK: - Helpers
@@ -260,6 +263,15 @@ struct RichTextEditor: UIViewRepresentable {
         tv.verticalScrollIndicatorInsets.bottom = bottomInset
         tv.delegate = ctx.coordinator
 
+        // Swipe gestures for bullet indent/de-indent
+        let swipeRight = UISwipeGestureRecognizer(target: ctx.coordinator, action: #selector(Coordinator.handleSwipeRight(_:)))
+        swipeRight.direction = .right
+        tv.addGestureRecognizer(swipeRight)
+
+        let swipeLeft = UISwipeGestureRecognizer(target: ctx.coordinator, action: #selector(Coordinator.handleSwipeLeft(_:)))
+        swipeLeft.direction = .left
+        tv.addGestureRecognizer(swipeLeft)
+
         // Set initial content
         if context.attributedText.length > 0 {
             tv.attributedText = context.attributedText
@@ -325,25 +337,78 @@ struct RichTextEditor: UIViewRepresentable {
             let lineRange = nsText.lineRange(for: NSRange(location: range.location, length: 0))
             let lineText = nsText.substring(with: lineRange).trimmingCharacters(in: .newlines)
 
-            guard lineText.hasPrefix("\u{2022}\t") else { return true }
+            // Match indented bullets: optional tabs, then bullet+tab
+            guard let bulletMatch = lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) else { return true }
+            let bulletPrefix = String(lineText[bulletMatch])
 
-            // If bullet line is empty (just bullet+tab), remove bullet and don't add new one
-            let contentAfterBullet = String(lineText.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+            // If bullet line is empty (just indent+bullet+tab), remove bullet and don't add new one
+            let contentAfterBullet = String(lineText[bulletMatch.upperBound...]).trimmingCharacters(in: .whitespaces)
             if contentAfterBullet.isEmpty {
-                // Remove the bullet prefix from current line
-                let bulletRange = NSRange(location: lineRange.location, length: min(2, nsText.length - lineRange.location))
-                storage.replaceCharacters(in: bulletRange, with: "")
+                let prefixLength = bulletPrefix.count
+                let removeRange = NSRange(location: lineRange.location, length: min(prefixLength, nsText.length - lineRange.location))
+                storage.replaceCharacters(in: removeRange, with: "")
                 context.isBulletList = false
                 context.notifyChange(textView)
                 return false
             }
 
-            // Auto-continue bullet on new line
-            let bulletStr = NSAttributedString(string: "\n\u{2022}\t", attributes: textView.typingAttributes)
-            storage.replaceCharacters(in: range, with: bulletStr)
-            textView.selectedRange = NSRange(location: range.location + 3, length: 0)
+            // Auto-continue bullet on new line, preserving indent level
+            let newBullet = NSAttributedString(string: "\n" + bulletPrefix, attributes: textView.typingAttributes)
+            storage.replaceCharacters(in: range, with: newBullet)
+            textView.selectedRange = NSRange(location: range.location + newBullet.length, length: 0)
             context.notifyChange(textView)
             return false
+        }
+
+        // MARK: - Bullet Indent/De-indent
+
+        @objc func handleSwipeRight(_ gesture: UISwipeGestureRecognizer) {
+            guard let textView = gesture.view as? UITextView else { return }
+            let storage = textView.textStorage
+            let nsText = storage.string as NSString
+            let lineRange = nsText.lineRange(for: textView.selectedRange)
+            let lineText = nsText.substring(with: lineRange)
+
+            // Only indent bullet lines
+            guard lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) != nil else { return }
+
+            let tabStr = NSAttributedString(string: "\t", attributes: textView.typingAttributes)
+            storage.insert(tabStr, at: lineRange.location)
+
+            // Re-read modified line and place cursor after bullet prefix
+            let updatedText = storage.string as NSString
+            let updatedLineRange = updatedText.lineRange(for: NSRange(location: lineRange.location, length: 0))
+            let updatedLineText = updatedText.substring(with: updatedLineRange)
+            if let match = updatedLineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) {
+                let prefixLength = updatedLineText.distance(from: updatedLineText.startIndex, to: match.upperBound)
+                textView.selectedRange = NSRange(location: updatedLineRange.location + prefixLength, length: 0)
+            }
+            context.notifyChange(textView)
+        }
+
+        @objc func handleSwipeLeft(_ gesture: UISwipeGestureRecognizer) {
+            guard let textView = gesture.view as? UITextView else { return }
+            let storage = textView.textStorage
+            let nsText = storage.string as NSString
+            let lineRange = nsText.lineRange(for: textView.selectedRange)
+            let lineText = nsText.substring(with: lineRange)
+
+            // Only de-indent if line starts with a tab before the bullet
+            guard lineText.hasPrefix("\t") else { return }
+            guard lineText.range(of: "^\t+\u{2022}\t", options: .regularExpression) != nil else { return }
+
+            let removeRange = NSRange(location: lineRange.location, length: 1)
+            storage.replaceCharacters(in: removeRange, with: "")
+
+            // Re-read modified line and place cursor after bullet prefix
+            let updatedText = storage.string as NSString
+            let updatedLineRange = updatedText.lineRange(for: NSRange(location: lineRange.location, length: 0))
+            let updatedLineText = updatedText.substring(with: updatedLineRange)
+            if let match = updatedLineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) {
+                let prefixLength = updatedLineText.distance(from: updatedLineText.startIndex, to: match.upperBound)
+                textView.selectedRange = NSRange(location: updatedLineRange.location + prefixLength, length: 0)
+            }
+            context.notifyChange(textView)
         }
     }
 }
