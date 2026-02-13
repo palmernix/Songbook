@@ -36,7 +36,6 @@ enum iCloudScanService {
                 guard let vals = try? child.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey]) else { return false }
                 return vals.isDirectory == true && vals.isPackage != true
             }
-            .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
 
         print("[Scan] \(subdirectories.count) subdirectories after filtering")
 
@@ -49,6 +48,11 @@ enum iCloudScanService {
             }
             print("[Scan]   \(dir.lastPathComponent) -> FOLDER")
             return FolderNode(name: dir.lastPathComponent, url: dir, children: [])
+        }
+        .sorted { a, b in
+            let dateA = a.songFile?.updatedAt ?? (try? a.url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let dateB = b.songFile?.updatedAt ?? (try? b.url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return dateA > dateB
         }
 
         print("[Scan] Result: \(children.count) children (\(children.filter { $0.isSong }.count) songs, \(children.filter { !$0.isSong }.count) folders)")

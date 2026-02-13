@@ -121,14 +121,6 @@ struct BrowseFolderView: View {
     @State private var newSongTitle = ""
     @State private var folderHasSongFile = false
 
-    private var folders: [FolderNode] {
-        node?.children.filter { !$0.isSong } ?? []
-    }
-
-    private var songs: [FolderNode] {
-        node?.children.filter { $0.isSong } ?? []
-    }
-
     private var isEmpty: Bool {
         node?.children.isEmpty ?? true
     }
@@ -277,32 +269,32 @@ struct BrowseFolderView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add Song")
 
-                ForEach(folders) { folder in
-                    NavigationLink(value: folder) {
-                        FolderCard(name: folder.name, itemCount: folder.children.count)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                ForEach(songs) { songNode in
-                    Button {
-                        if let sf = songNode.songFile {
-                            coordinator.openSong(sf, folderURL: songNode.url)
-                        }
-                    } label: {
-                        SongCard(
-                            title: songNode.songFile?.title ?? songNode.name,
-                            updatedAt: songNode.songFile?.updatedAt ?? Date()
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            nodeToDelete = songNode
-                            showDeleteConfirm = true
+                ForEach(node?.children ?? []) { child in
+                    if child.isSong {
+                        Button {
+                            if let sf = child.songFile {
+                                coordinator.openSong(sf, folderURL: child.url)
+                            }
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            SongCard(
+                                title: child.songFile?.title ?? child.name,
+                                updatedAt: child.songFile?.updatedAt ?? Date()
+                            )
                         }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                nodeToDelete = child
+                                showDeleteConfirm = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    } else {
+                        NavigationLink(value: child) {
+                            FolderCard(name: child.name, itemCount: child.children.count)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
