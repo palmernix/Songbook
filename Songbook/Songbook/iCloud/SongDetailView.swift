@@ -360,6 +360,7 @@ private struct AudioEntryEditor: View {
                 title: $songFile.entries[index].title,
                 audioData: $songFile.entries[index].audioData,
                 waveformSamples: $songFile.entries[index].waveformSamples,
+                audioComments: $songFile.entries[index].audioComments,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()

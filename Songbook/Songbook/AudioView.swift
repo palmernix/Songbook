@@ -7,6 +7,8 @@ import UniformTypeIdentifiers
 struct WaveformView: View {
     let samples: [Float]
     @Binding var progress: Double
+    var comments: [AudioComment] = []
+    var duration: TimeInterval = 0
     var onScrub: ((Double) -> Void)? = nil
 
     var body: some View {
@@ -16,28 +18,41 @@ struct WaveformView: View {
             let barWidth = max(2, (geo.size.width - totalSpacing) / CGFloat(barCount))
             let midY = geo.size.height / 2
 
-            Canvas { context, size in
-                for (index, sample) in samples.enumerated() {
-                    let x = CGFloat(index) * (barWidth + 1.5)
-                    let amplitude = CGFloat(sample) * midY * 0.9
-                    let barHeight = max(barWidth, amplitude * 2)
+            ZStack(alignment: .top) {
+                Canvas { context, size in
+                    for (index, sample) in samples.enumerated() {
+                        let x = CGFloat(index) * (barWidth + 1.5)
+                        let amplitude = CGFloat(sample) * midY * 0.9
+                        let barHeight = max(barWidth, amplitude * 2)
 
-                    let rect = CGRect(
-                        x: x,
-                        y: midY - barHeight / 2,
-                        width: barWidth,
-                        height: barHeight
-                    )
+                        let rect = CGRect(
+                            x: x,
+                            y: midY - barHeight / 2,
+                            width: barWidth,
+                            height: barHeight
+                        )
 
-                    let progressX = progress * size.width
-                    let color: Color = x + barWidth <= progressX
-                        ? .darkInk
-                        : .darkInk.opacity(0.2)
+                        let progressX = progress * size.width
+                        let color: Color = x + barWidth <= progressX
+                            ? .darkInk
+                            : .darkInk.opacity(0.2)
 
-                    context.fill(
-                        Path(roundedRect: rect, cornerRadius: barWidth / 2),
-                        with: .color(color)
-                    )
+                        context.fill(
+                            Path(roundedRect: rect, cornerRadius: barWidth / 2),
+                            with: .color(color)
+                        )
+                    }
+                }
+
+                // Comment markers
+                if duration > 0 {
+                    ForEach(comments) { comment in
+                        let markerX = (comment.timestamp / duration) * geo.size.width
+                        Circle()
+                            .fill(Color.darkInk)
+                            .frame(width: 6, height: 6)
+                            .position(x: markerX, y: 3)
+                    }
                 }
             }
             .contentShape(Rectangle())
@@ -59,6 +74,7 @@ struct AudioView: View {
     @Binding var title: String
     @Binding var audioData: Data?
     @Binding var waveformSamples: [Float]?
+    @Binding var audioComments: [AudioComment]?
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
@@ -69,6 +85,8 @@ struct AudioView: View {
     @State private var playbackDuration: TimeInterval = 0
     @State private var showDocumentPicker = false
     @State private var showReplaceMenu = false
+    @State private var showAddComment = false
+    @State private var newCommentText = ""
 
     @State private var recorder: AVAudioRecorder?
     @State private var player: AVAudioPlayer?
@@ -76,6 +94,10 @@ struct AudioView: View {
     @State private var playbackTimer: Timer?
 
     @Environment(\.dismiss) private var dismiss
+
+    private var sortedComments: [AudioComment] {
+        (audioComments ?? []).sorted { $0.timestamp < $1.timestamp }
+    }
 
     var body: some View {
         ZStack {
@@ -96,12 +118,33 @@ struct AudioView: View {
             }
         }
         .navigationBarHidden(true)
-        .onAppear { if title.isEmpty { title = "Untitled" } }
+        .onAppear {
+            if title.isEmpty { title = "Untitled" }
+            loadDuration()
+        }
         .onDisappear { stopPlayback(); stopRecording() }
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker { data in
                 audioData = data
                 waveformSamples = Self.extractWaveform(from: data)
+                audioComments = nil
+                onSave()
+            }
+        }
+        .alert("Comment at \(formatTime(playbackProgress * playbackDuration))", isPresented: $showAddComment) {
+            TextField("Your note...", text: $newCommentText)
+            Button("Cancel", role: .cancel) { newCommentText = "" }
+            Button("Add") {
+                let comment = AudioComment(
+                    timestamp: playbackProgress * playbackDuration,
+                    text: newCommentText
+                )
+                if audioComments == nil {
+                    audioComments = [comment]
+                } else {
+                    audioComments?.append(comment)
+                }
+                newCommentText = ""
                 onSave()
             }
         }
@@ -218,71 +261,155 @@ struct AudioView: View {
     // MARK: - Playback View
 
     private var playbackView: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        VStack(spacing: 0) {
+            VStack(spacing: 16) {
+                Spacer()
 
-            // Play/pause button
-            Button {
-                if isPlaying { pausePlayback() } else { startPlayback() }
-            } label: {
-                Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(Color.darkInk)
+                // Play/pause button
+                Button {
+                    if isPlaying { pausePlayback() } else { startPlayback() }
+                } label: {
+                    Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(Color.darkInk)
+                }
+
+                // Waveform or progress fallback
+                VStack(spacing: 4) {
+                    if let samples = waveformSamples, !samples.isEmpty {
+                        WaveformView(
+                            samples: samples,
+                            progress: $playbackProgress,
+                            comments: sortedComments,
+                            duration: playbackDuration,
+                            onScrub: { newProgress in
+                                seekPlayback(to: newProgress)
+                            }
+                        )
+                        .frame(height: 48)
+                    } else {
+                        ProgressView(value: playbackProgress)
+                            .tint(Color.darkInk)
+                    }
+
+                    HStack {
+                        Text(formatTime(playbackProgress * playbackDuration))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatTime(playbackDuration))
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 40)
+
+                // Add comment button
+                Button {
+                    showAddComment = true
+                } label: {
+                    Label("Add Comment", systemImage: "plus.bubble")
+                        .font(.subheadline.weight(.medium))
+                }
+                .tint(Color.darkInk)
+
+                // Replace menu
+                Menu {
+                    Button {
+                        stopPlayback()
+                        audioData = nil
+                        waveformSamples = nil
+                        audioComments = nil
+                        onSave()
+                        startRecording()
+                    } label: {
+                        Label("Re-record", systemImage: "mic.fill")
+                    }
+
+                    Button {
+                        stopPlayback()
+                        showDocumentPicker = true
+                    } label: {
+                        Label("Import from Files", systemImage: "folder")
+                    }
+                } label: {
+                    Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.subheadline.weight(.medium))
+                }
+                .tint(Color.darkInk)
             }
 
-            // Waveform or progress fallback
-            VStack(spacing: 4) {
-                if let samples = waveformSamples, !samples.isEmpty {
-                    WaveformView(
-                        samples: samples,
-                        progress: $playbackProgress,
-                        onScrub: { newProgress in
-                            seekPlayback(to: newProgress)
+            // Comments list
+            if !sortedComments.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Rectangle()
+                        .fill(Color.darkInk.opacity(0.08))
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+
+                    HStack {
+                        Text("Comments")
+                            .font(.system(.caption, design: .serif, weight: .semibold))
+                            .foregroundStyle(Color.darkInk.opacity(0.4))
+                            .textCase(.uppercase)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(sortedComments) { comment in
+                                commentRow(comment)
+
+                                if comment.id != sortedComments.last?.id {
+                                    Rectangle()
+                                        .fill(Color.darkInk.opacity(0.06))
+                                        .frame(height: 1)
+                                        .padding(.leading, 58)
+                                }
+                            }
                         }
-                    )
-                    .frame(height: 48)
-                } else {
-                    ProgressView(value: playbackProgress)
-                        .tint(Color.darkInk)
-                }
-
-                HStack {
-                    Text(formatTime(playbackProgress * playbackDuration))
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(formatTime(playbackDuration))
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                    }
                 }
             }
-            .padding(.horizontal, 40)
 
-            // Replace menu
-            Menu {
-                Button {
-                    stopPlayback()
-                    audioData = nil
-                    waveformSamples = nil
-                    onSave()
-                    startRecording()
-                } label: {
-                    Label("Re-record", systemImage: "mic.fill")
-                }
+            Spacer(minLength: 0)
+        }
+    }
 
-                Button {
-                    stopPlayback()
-                    showDocumentPicker = true
-                } label: {
-                    Label("Import from Files", systemImage: "folder")
-                }
+    private func commentRow(_ comment: AudioComment) -> some View {
+        Button {
+            let newProgress = playbackDuration > 0 ? comment.timestamp / playbackDuration : 0
+            playbackProgress = newProgress
+            seekPlayback(to: newProgress)
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Text(formatTime(comment.timestamp))
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(Color.darkInk.opacity(0.5))
+                    .frame(width: 36, alignment: .leading)
+
+                Text(comment.text)
+                    .font(.system(.subheadline, design: .serif))
+                    .foregroundStyle(Color.darkInk)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                audioComments?.removeAll { $0.id == comment.id }
+                onSave()
             } label: {
-                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.subheadline.weight(.medium))
+                Label("Delete Comment", systemImage: "trash")
             }
-            .tint(Color.darkInk)
-
-            Spacer()
         }
     }
 
@@ -342,6 +469,13 @@ struct AudioView: View {
     }
 
     // MARK: - Playback
+
+    private func loadDuration() {
+        guard let data = audioData, playbackDuration == 0 else { return }
+        if let p = try? AVAudioPlayer(data: data) {
+            playbackDuration = p.duration
+        }
+    }
 
     private func startPlayback() {
         guard let data = audioData else { return }
