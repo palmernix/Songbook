@@ -125,6 +125,18 @@ class RichTextContext {
         }
         storage.endEditing()
 
+        // Update typing attributes so new characters use the heading font
+        var attrs = textView.typingAttributes
+        let existingFont = (attrs[.font] as? UIFont) ?? UIFont.systemFont(ofSize: level.fontSize)
+        var traits = existingFont.fontDescriptor.symbolicTraits
+        traits.remove(.traitBold)
+        if level.fontWeight == .bold || level.fontWeight == .semibold {
+            traits.insert(.traitBold)
+        }
+        let desc = existingFont.fontDescriptor.withSymbolicTraits(traits) ?? existingFont.fontDescriptor
+        attrs[.font] = UIFont(descriptor: desc, size: level.fontSize)
+        textView.typingAttributes = attrs
+
         currentHeadingLevel = level
         textView.selectedRange = textView.selectedRange
         notifyChange(textView)
@@ -165,7 +177,14 @@ class RichTextContext {
         if range.length > 0 {
             attrs = textView.textStorage.attributes(at: range.location, effectiveRange: nil)
         } else if range.location > 0 {
-            attrs = textView.textStorage.attributes(at: range.location - 1, effectiveRange: nil)
+            let text = textView.textStorage.string as NSString
+            // If previous character is a newline, we're at the start of a line —
+            // use typingAttributes so we reflect the heading set for this line
+            if text.character(at: range.location - 1) == 0x0A {
+                attrs = textView.typingAttributes
+            } else {
+                attrs = textView.textStorage.attributes(at: range.location - 1, effectiveRange: nil)
+            }
         } else {
             attrs = textView.typingAttributes
         }
@@ -312,6 +331,8 @@ struct RichTextEditor: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate {
         let context: RichTextContext
         var isUpdating = false
+        private var savedLineFont: UIFont?
+        private var pendingBodyReset = false
         init(context: RichTextContext) {
             self.context = context
         }
@@ -319,16 +340,55 @@ struct RichTextEditor: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             guard !isUpdating else { return }
             isUpdating = true
+            restoreLineFontIfNeeded(textView)
+            applyPendingBodyReset(textView)
             context.notifyChange(textView)
             isUpdating = false
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
+            restoreLineFontIfNeeded(textView)
+            applyPendingBodyReset(textView)
             context.selectedRange = textView.selectedRange
             context.refreshState(from: textView)
         }
 
+        private func restoreLineFontIfNeeded(_ textView: UITextView) {
+            guard let font = savedLineFont else { return }
+            savedLineFont = nil
+            let nsText = textView.textStorage.string as NSString
+            let lineRange = nsText.lineRange(for: textView.selectedRange)
+            let lineText = nsText.substring(with: lineRange).trimmingCharacters(in: .newlines)
+            if lineText.isEmpty {
+                var attrs = textView.typingAttributes
+                attrs[.font] = font
+                textView.typingAttributes = attrs
+            }
+        }
+
+        private func applyPendingBodyReset(_ textView: UITextView) {
+            guard pendingBodyReset else { return }
+            pendingBodyReset = false
+            var attrs = textView.typingAttributes
+            attrs[.font] = UIFont.systemFont(ofSize: HeadingLevel.body.fontSize, weight: HeadingLevel.body.fontWeight)
+            textView.typingAttributes = attrs
+        }
+
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            // Before deletion, save the current line's font so we can restore it if the line empties
+            savedLineFont = nil
+            if text.isEmpty && range.length > 0 {
+                let nsText = textView.textStorage.string as NSString
+                let lineRange = nsText.lineRange(for: textView.selectedRange)
+                let lineContentEnd = lineRange.location + lineRange.length
+                    - (nsText.substring(with: lineRange).hasSuffix("\n") ? 1 : 0)
+                if lineContentEnd > lineRange.location {
+                    savedLineFont = textView.textStorage.attribute(
+                        .font, at: lineRange.location, effectiveRange: nil
+                    ) as? UIFont
+                }
+            }
+
             // Handle Return key for bullet continuation
             guard text == "\n" else { return true }
 
@@ -338,7 +398,11 @@ struct RichTextEditor: UIViewRepresentable {
             let lineText = nsText.substring(with: lineRange).trimmingCharacters(in: .newlines)
 
             // Match indented bullets: optional tabs, then bullet+tab
-            guard let bulletMatch = lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) else { return true }
+            guard let bulletMatch = lineText.range(of: "^\t*\u{2022}\t", options: .regularExpression) else {
+                // Let UITextView insert the newline, then reset to body on the next delegate callback
+                pendingBodyReset = true
+                return true
+            }
             let bulletPrefix = String(lineText[bulletMatch])
 
             // If bullet line is empty (just indent+bullet+tab), remove bullet and don't add new one
