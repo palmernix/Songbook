@@ -4,7 +4,7 @@ PROJECT_ID ?= $(shell gcloud config get-value project 2>/dev/null)
 REGION ?= us-east1
 SERVICE ?= lyricsheets-api
 IMAGE ?= gcr.io/$(PROJECT_ID)/$(SERVICE)
-API_DIR ?= api-python
+API_DIR ?= lyric-engine
 GEMINI_MODEL ?= models/gemini-2.0-flash
 
 # For the simple env-var deploy. Export this in your shell before make deploy:

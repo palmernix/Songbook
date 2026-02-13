@@ -62,23 +62,23 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 
 
-# --- Python backend (api-python) ---
-api-python/.venv/ 
-api-python/.env
-api-python/__pycache__/
-api-python/**/*.pyc
-api-python/.pytest_cache/
-api-python/.mypy_cache/
-api-python/.ruff_cache/
-api-python/.ipynb_checkpoints/
-api-python/.coverage
+# --- Python backend (lyric-engine) ---
+lyric-engine/.venv/ 
+lyric-engine/.env
+lyric-engine/__pycache__/
+lyric-engine/**/*.pyc
+lyric-engine/.pytest_cache/
+lyric-engine/.mypy_cache/
+lyric-engine/.ruff_cache/
+lyric-engine/.ipynb_checkpoints/
+lyric-engine/.coverage
 
 # Chroma vector DB (local persistence)
-api-python/chroma_db/
+lyric-engine/chroma_db/
 
 # Editor/IDE cruft
-api-python/.idea/
-api-python/.vscode/
+lyric-engine/.idea/
+lyric-engine/.vscode/
 
 # macOS cruft (catch-all)
 .DS_Store

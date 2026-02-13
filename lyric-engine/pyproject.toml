@@ -1,7 +1,7 @@
 [project]
-name = "api-python"
+name = "lyric-engine"
 version = "0.1.0"
-description = "FastAPI backend for Song Spark"
+description = "FastAPI backend for Songbook"
 authors = [{name = "Palmer Nix",email = "nix.palmer9200@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.11,<4.0"

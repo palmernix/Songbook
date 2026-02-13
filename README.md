@@ -23,7 +23,7 @@ An integrated AI “Inspire” button uses a lightweight FastAPI + LangChain bac
 - Local-first storage for single-user usage.
     - Persistence via Firebase / iCloud as a future state if cross-device sync is a requirement.
 
-### Backend API (`/api-python`)
+### Backend API (`/lyric-engine`)
 - Built with **FastAPI** + **LangChain** + **Chroma** vector database.
 - `/suggest` → returns a single lyric suggestion.
 - `/ingest/snapshot` → embeds and stores all lines from a saved song.
@@ -48,7 +48,7 @@ song-spark/
 │   ├── Sources/
 │   └── …
 │
-├── api-python/        # FastAPI backend
+├── lyric-engine/      # FastAPI backend
 │   ├── main.py
 │   ├── pyproject.toml (Poetry)
 │   ├── .env (not committed)
