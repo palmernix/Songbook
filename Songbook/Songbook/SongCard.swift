@@ -10,17 +10,10 @@ struct SongCard: View {
     let updatedAt: Date
 
     var body: some View {
-        HStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.darkInk.opacity(0.7), Color.darkInk.opacity(0.2)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: 3)
-                .padding(.vertical, 8)
+        HStack(spacing: 12) {
+            Image(systemName: "music.note")
+                .font(.title3)
+                .foregroundStyle(Color.darkInk.opacity(0.4))
 
             HStack(alignment: .firstTextBaseline) {
                 Text(title.isEmpty ? "Untitled" : title)
@@ -37,7 +30,6 @@ struct SongCard: View {
                     .textCase(.uppercase)
                     .tracking(0.5)
             }
-            .padding(.leading, 12)
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
