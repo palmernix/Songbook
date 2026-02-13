@@ -48,6 +48,7 @@ struct NotesView: View {
 
             TextField("Title", text: $title)
                 .font(.system(.title2, design: .serif, weight: .bold))
+                .foregroundStyle(Color.darkInk)
                 .textInputAutocapitalization(.words)
         }
         .padding(.horizontal, 20)
@@ -57,6 +58,7 @@ struct NotesView: View {
 
     private var editorCard: some View {
         TextEditor(text: $text)
+            .foregroundStyle(Color.darkInk)
             .scrollContentBackground(.hidden)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

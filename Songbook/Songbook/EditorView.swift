@@ -75,6 +75,7 @@ struct LyricsView: View {
 
             TextField("Title", text: $title)
                 .font(.system(.title2, design: .serif, weight: .bold))
+                .foregroundStyle(Color.darkInk)
                 .textInputAutocapitalization(.words)
         }
         .padding(.horizontal, 20)
@@ -292,6 +293,7 @@ struct CursorTextEditor: UIViewRepresentable {
         tv.font = UIFont.preferredFont(forTextStyle: .body)
         tv.isScrollEnabled = true
         tv.backgroundColor = .clear
+        tv.textColor = UIColor(Color.darkInk)
         tv.delegate = context.coordinator
         return tv
     }
