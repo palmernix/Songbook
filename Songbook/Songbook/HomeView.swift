@@ -371,7 +371,8 @@ private struct SwiftDataSongDetailView: View {
                 }
             }
         }
-        .presentationDetents([.fraction(0.35)])
+        .presentationDetents([.fraction(0.39)])
+        .scrollDisabled(true)
     }
 
     private func addEntry(type: EntryType, title: String) {
