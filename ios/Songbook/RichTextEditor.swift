@@ -38,6 +38,15 @@ enum HeadingLevel: String, CaseIterable {
         }
     }
 
+    var shortLabel: String {
+        switch self {
+        case .h1: "H1"
+        case .h2: "H2"
+        case .h3: "H3"
+        case .body: "Body"
+        }
+    }
+
     var fontWeight: UIFont.Weight {
         switch self {
         case .h1: .bold
@@ -555,7 +564,7 @@ struct FormattingToolbar: View {
                 }
             }
         } label: {
-            Text(context.currentHeadingLevel.rawValue)
+            Text(context.currentHeadingLevel.shortLabel)
                 .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(Color(.label))
                 .padding(.horizontal, 10)
