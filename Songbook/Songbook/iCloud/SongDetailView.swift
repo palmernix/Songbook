@@ -7,6 +7,8 @@ struct SongDetailView: View {
     @Environment(EditorCoordinator.self) private var coordinator
     @State private var showNewEntrySheet = false
     @State private var navigationPath = NavigationPath()
+    @State private var renamingEntryID: UUID?
+    @State private var renameText = ""
 
     init(folderURL: URL, initialSongFile: SongFile) {
         self.folderURL = folderURL
@@ -51,6 +53,23 @@ struct SongDetailView: View {
             }
             .sheet(isPresented: $showNewEntrySheet) {
                 newEntrySheet
+            }
+            .alert("Rename Entry", isPresented: Binding(
+                get: { renamingEntryID != nil },
+                set: { if !$0 { renamingEntryID = nil } }
+            )) {
+                TextField("Title", text: $renameText)
+                Button("Cancel", role: .cancel) { renamingEntryID = nil }
+                Button("Rename") {
+                    if let id = renamingEntryID,
+                       let index = songFile.entries.firstIndex(where: { $0.id == id }) {
+                        songFile.entries[index].title = renameText
+                        songFile.entries[index].updatedAt = Date()
+                        songFile.updatedAt = Date()
+                        saveToDisk()
+                    }
+                    renamingEntryID = nil
+                }
             }
         }
     }
@@ -117,6 +136,13 @@ struct SongDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
+                    Button {
+                        renameText = entry.title
+                        renamingEntryID = entry.id
+                    } label: {
+                        Label("Rename", systemImage: "pencil")
+                    }
+
                     Button(role: .destructive) {
                         deleteEntry(entry)
                     } label: {

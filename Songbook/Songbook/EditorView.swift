@@ -97,7 +97,7 @@ struct LyricsView: View {
             TextField("Title", text: $title)
                 .font(.system(.title2, design: .serif, weight: .bold))
                 .foregroundStyle(Color.darkInk)
-                .textInputAutocapitalization(.words)
+                .textInputAutocapitalization(.sentences)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)

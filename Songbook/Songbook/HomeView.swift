@@ -195,6 +195,8 @@ private struct SwiftDataSongDetailView: View {
     @Environment(\.modelContext) private var context
     @State private var showNewEntrySheet = false
     @State private var navigationPath = NavigationPath()
+    @State private var renamingEntryID: UUID?
+    @State private var renameText = ""
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -234,6 +236,23 @@ private struct SwiftDataSongDetailView: View {
             }
             .sheet(isPresented: $showNewEntrySheet) {
                 newEntrySheet
+            }
+            .alert("Rename Entry", isPresented: Binding(
+                get: { renamingEntryID != nil },
+                set: { if !$0 { renamingEntryID = nil } }
+            )) {
+                TextField("Title", text: $renameText)
+                Button("Cancel", role: .cancel) { renamingEntryID = nil }
+                Button("Rename") {
+                    if let id = renamingEntryID,
+                       let index = song.entries.firstIndex(where: { $0.id == id }) {
+                        song.entries[index].title = renameText
+                        song.entries[index].updatedAt = Date()
+                        song.updatedAt = Date()
+                        try? context.save()
+                    }
+                    renamingEntryID = nil
+                }
             }
         }
     }
@@ -300,6 +319,13 @@ private struct SwiftDataSongDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .contextMenu {
+                    Button {
+                        renameText = entry.title
+                        renamingEntryID = entry.id
+                    } label: {
+                        Label("Rename", systemImage: "pencil")
+                    }
+
                     Button(role: .destructive) {
                         deleteEntry(entry)
                     } label: {
