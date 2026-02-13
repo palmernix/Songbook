@@ -11,7 +11,7 @@ from Services.llm import inspire_one_line
 
 # --- env & app ---
 load_dotenv()
-app = FastAPI(title="LyricSheets API", version="0.1.0")
+app = FastAPI(title="Songbook API", version="0.1.0")
 
 ALLOWED_ORIGINS = [
     # Production API
@@ -32,7 +32,7 @@ app.add_middleware(
 
 # --- logging ---
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("lyricsheets")
+logger = logging.getLogger("songbook")
 
 # --- health ---
 @app.get("/health")

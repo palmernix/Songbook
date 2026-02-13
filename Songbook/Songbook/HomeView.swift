@@ -31,7 +31,7 @@ struct HomeView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("LyricSheets")
+            .navigationTitle("Songbook")
             .navigationDestination(for: Song.self) { song in
                 EditorView(song: song)
             }

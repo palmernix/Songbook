@@ -1,10 +1,10 @@
-# Lyric Sheets
+# Songbook
 *A personal songwriting companion with AI lyric inspiration.*
 
 ---
 
 ## Overview
-**Lyric Sheets** is a SwiftUI app for writing, organizing, and refining song lyrics.  
+**Songbook** is a SwiftUI app for writing, organizing, and refining song lyrics.  
 Each song has its own lyric sheet — simple, focused, and local-first.  
 An integrated AI “Inspire” button uses a lightweight FastAPI + LangChain backend to generate single-line lyric suggestions that match your personal writing style.
 

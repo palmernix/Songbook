@@ -12,37 +12,37 @@
 			containerPortal = 538D9E422EAAC03600ABA1D6 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 538D9E492EAAC03600ABA1D6;
-			remoteInfo = LyricSheets;
+			remoteInfo = Songbook;
 		};
 		538D9E642EAAC03700ABA1D6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 538D9E422EAAC03600ABA1D6 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 538D9E492EAAC03600ABA1D6;
-			remoteInfo = LyricSheets;
+			remoteInfo = Songbook;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		538D9E4A2EAAC03600ABA1D6 /* LyricSheets.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LyricSheets.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		538D9E592EAAC03700ABA1D6 /* LyricSheetsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LyricSheetsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		538D9E632EAAC03700ABA1D6 /* LyricSheetsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LyricSheetsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		538D9E4A2EAAC03600ABA1D6 /* Songbook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Songbook.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		538D9E592EAAC03700ABA1D6 /* SongbookTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SongbookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		538D9E632EAAC03700ABA1D6 /* SongbookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SongbookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		538D9E4C2EAAC03600ABA1D6 /* LyricSheets */ = {
+		538D9E4C2EAAC03600ABA1D6 /* Songbook */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LyricSheets;
+			path = Songbook;
 			sourceTree = "<group>";
 		};
-		538D9E5C2EAAC03700ABA1D6 /* LyricSheetsTests */ = {
+		538D9E5C2EAAC03700ABA1D6 /* SongbookTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LyricSheetsTests;
+			path = SongbookTests;
 			sourceTree = "<group>";
 		};
-		538D9E662EAAC03700ABA1D6 /* LyricSheetsUITests */ = {
+		538D9E662EAAC03700ABA1D6 /* SongbookUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LyricSheetsUITests;
+			path = SongbookUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		538D9E412EAAC03600ABA1D6 = {
 			isa = PBXGroup;
 			children = (
-				538D9E4C2EAAC03600ABA1D6 /* LyricSheets */,
-				538D9E5C2EAAC03700ABA1D6 /* LyricSheetsTests */,
-				538D9E662EAAC03700ABA1D6 /* LyricSheetsUITests */,
+				538D9E4C2EAAC03600ABA1D6 /* Songbook */,
+				538D9E5C2EAAC03700ABA1D6 /* SongbookTests */,
+				538D9E662EAAC03700ABA1D6 /* SongbookUITests */,
 				538D9E4B2EAAC03600ABA1D6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		538D9E4B2EAAC03600ABA1D6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				538D9E4A2EAAC03600ABA1D6 /* LyricSheets.app */,
-				538D9E592EAAC03700ABA1D6 /* LyricSheetsTests.xctest */,
-				538D9E632EAAC03700ABA1D6 /* LyricSheetsUITests.xctest */,
+				538D9E4A2EAAC03600ABA1D6 /* Songbook.app */,
+				538D9E592EAAC03700ABA1D6 /* SongbookTests.xctest */,
+				538D9E632EAAC03700ABA1D6 /* SongbookUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		538D9E492EAAC03600ABA1D6 /* LyricSheets */ = {
+		538D9E492EAAC03600ABA1D6 /* Songbook */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 538D9E6D2EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheets" */;
+			buildConfigurationList = 538D9E6D2EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "Songbook" */;
 			buildPhases = (
 				538D9E462EAAC03600ABA1D6 /* Sources */,
 				538D9E472EAAC03600ABA1D6 /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				538D9E4C2EAAC03600ABA1D6 /* LyricSheets */,
+				538D9E4C2EAAC03600ABA1D6 /* Songbook */,
 			);
-			name = LyricSheets;
+			name = Songbook;
 			packageProductDependencies = (
 			);
-			productName = LyricSheets;
-			productReference = 538D9E4A2EAAC03600ABA1D6 /* LyricSheets.app */;
+			productName = Songbook;
+			productReference = 538D9E4A2EAAC03600ABA1D6 /* Songbook.app */;
 			productType = "com.apple.product-type.application";
 		};
-		538D9E582EAAC03700ABA1D6 /* LyricSheetsTests */ = {
+		538D9E582EAAC03700ABA1D6 /* SongbookTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 538D9E702EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheetsTests" */;
+			buildConfigurationList = 538D9E702EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "SongbookTests" */;
 			buildPhases = (
 				538D9E552EAAC03700ABA1D6 /* Sources */,
 				538D9E562EAAC03700ABA1D6 /* Frameworks */,
@@ -131,18 +131,18 @@
 				538D9E5B2EAAC03700ABA1D6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				538D9E5C2EAAC03700ABA1D6 /* LyricSheetsTests */,
+				538D9E5C2EAAC03700ABA1D6 /* SongbookTests */,
 			);
-			name = LyricSheetsTests;
+			name = SongbookTests;
 			packageProductDependencies = (
 			);
-			productName = LyricSheetsTests;
-			productReference = 538D9E592EAAC03700ABA1D6 /* LyricSheetsTests.xctest */;
+			productName = SongbookTests;
+			productReference = 538D9E592EAAC03700ABA1D6 /* SongbookTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		538D9E622EAAC03700ABA1D6 /* LyricSheetsUITests */ = {
+		538D9E622EAAC03700ABA1D6 /* SongbookUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 538D9E732EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheetsUITests" */;
+			buildConfigurationList = 538D9E732EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "SongbookUITests" */;
 			buildPhases = (
 				538D9E5F2EAAC03700ABA1D6 /* Sources */,
 				538D9E602EAAC03700ABA1D6 /* Frameworks */,
@@ -154,13 +154,13 @@
 				538D9E652EAAC03700ABA1D6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				538D9E662EAAC03700ABA1D6 /* LyricSheetsUITests */,
+				538D9E662EAAC03700ABA1D6 /* SongbookUITests */,
 			);
-			name = LyricSheetsUITests;
+			name = SongbookUITests;
 			packageProductDependencies = (
 			);
-			productName = LyricSheetsUITests;
-			productReference = 538D9E632EAAC03700ABA1D6 /* LyricSheetsUITests.xctest */;
+			productName = SongbookUITests;
+			productReference = 538D9E632EAAC03700ABA1D6 /* SongbookUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 538D9E452EAAC03600ABA1D6 /* Build configuration list for PBXProject "LyricSheets" */;
+			buildConfigurationList = 538D9E452EAAC03600ABA1D6 /* Build configuration list for PBXProject "Songbook" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				538D9E492EAAC03600ABA1D6 /* LyricSheets */,
-				538D9E582EAAC03700ABA1D6 /* LyricSheetsTests */,
-				538D9E622EAAC03700ABA1D6 /* LyricSheetsUITests */,
+				538D9E492EAAC03600ABA1D6 /* Songbook */,
+				538D9E582EAAC03700ABA1D6 /* SongbookTests */,
+				538D9E622EAAC03700ABA1D6 /* SongbookUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		538D9E5B2EAAC03700ABA1D6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 538D9E492EAAC03600ABA1D6 /* LyricSheets */;
+			target = 538D9E492EAAC03600ABA1D6 /* Songbook */;
 			targetProxy = 538D9E5A2EAAC03700ABA1D6 /* PBXContainerItemProxy */;
 		};
 		538D9E652EAAC03700ABA1D6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 538D9E492EAAC03600ABA1D6 /* LyricSheets */;
+			target = 538D9E492EAAC03600ABA1D6 /* Songbook */;
 			targetProxy = 538D9E642EAAC03700ABA1D6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -410,7 +410,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.Songbook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -442,7 +442,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.Songbook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -464,7 +464,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheetsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.SongbookTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -472,7 +472,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LyricSheets.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LyricSheets";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Songbook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Songbook";
 			};
 			name = Debug;
 		};
@@ -486,7 +486,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheetsTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.SongbookTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -494,7 +494,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LyricSheets.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LyricSheets";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Songbook.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Songbook";
 			};
 			name = Release;
 		};
@@ -506,7 +506,7 @@
 				DEVELOPMENT_TEAM = J6T8K893LG;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheetsUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.SongbookUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -514,7 +514,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LyricSheets;
+				TEST_TARGET_NAME = Songbook;
 			};
 			name = Debug;
 		};
@@ -526,7 +526,7 @@
 				DEVELOPMENT_TEAM = J6T8K893LG;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.LyricSheetsUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.palmernix.SongbookUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -534,14 +534,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = LyricSheets;
+				TEST_TARGET_NAME = Songbook;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		538D9E452EAAC03600ABA1D6 /* Build configuration list for PBXProject "LyricSheets" */ = {
+		538D9E452EAAC03600ABA1D6 /* Build configuration list for PBXProject "Songbook" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				538D9E6B2EAAC03700ABA1D6 /* Debug */,
@@ -550,7 +550,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		538D9E6D2EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheets" */ = {
+		538D9E6D2EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "Songbook" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				538D9E6E2EAAC03700ABA1D6 /* Debug */,
@@ -559,7 +559,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		538D9E702EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheetsTests" */ = {
+		538D9E702EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "SongbookTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				538D9E712EAAC03700ABA1D6 /* Debug */,
@@ -568,7 +568,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		538D9E732EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "LyricSheetsUITests" */ = {
+		538D9E732EAAC03700ABA1D6 /* Build configuration list for PBXNativeTarget "SongbookUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				538D9E742EAAC03700ABA1D6 /* Debug */,

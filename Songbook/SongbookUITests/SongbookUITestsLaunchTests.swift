@@ -1,13 +1,13 @@
 //
-//  LyricSheetsUITestsLaunchTests.swift
-//  LyricSheetsUITests
+//  SongbookUITestsLaunchTests.swift
+//  SongbookUITests
 //
 //  Created by Palmer Nix on 10/23/25.
 //
 
 import XCTest
 
-final class LyricSheetsUITestsLaunchTests: XCTestCase {
+final class SongbookUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

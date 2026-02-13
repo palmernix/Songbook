@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct LyricSheetsApp: App {
+struct SongbookApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
