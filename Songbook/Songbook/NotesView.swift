@@ -6,7 +6,6 @@ struct NotesView: View {
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
-    @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -21,6 +20,8 @@ struct NotesView: View {
         }
         .navigationBarHidden(true)
         .onAppear { if title.isEmpty { title = "Untitled" } }
+        .onChange(of: title) { onSave() }
+        .onChange(of: text) { onSave() }
     }
 
     private var titleRow: some View {
@@ -35,15 +36,6 @@ struct NotesView: View {
                 .foregroundStyle(Color.darkInk)
 
                 Spacer()
-
-                Button {
-                    save()
-                } label: {
-                    if isSaving { ProgressView() } else { Text("Save") }
-                }
-                .foregroundStyle(Color.darkInk)
-                .fontWeight(.medium)
-                .disabled(isSaving)
             }
 
             TextField("Title", text: $title)
@@ -86,9 +78,4 @@ struct NotesView: View {
         return "\(count) words"
     }
 
-    private func save() {
-        isSaving = true
-        onSave()
-        isSaving = false
-    }
 }

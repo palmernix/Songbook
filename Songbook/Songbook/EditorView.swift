@@ -6,7 +6,6 @@ struct LyricsView: View {
     var onSave: () -> Void
     var onBack: (() -> Void)? = nil
 
-    @State private var isSaving = false
     @State private var showInspire = false
     @State private var suggestion: String = ""
     @State private var showOptions = false
@@ -48,6 +47,8 @@ struct LyricsView: View {
             .presentationDetents([.fraction(0.35), .medium, .large])
         }
         .onAppear { if title.isEmpty { title = "Untitled" } }
+        .onChange(of: title) { onSave() }
+        .onChange(of: text) { onSave() }
     }
 
     private var titleRow: some View {
@@ -62,15 +63,6 @@ struct LyricsView: View {
                 .foregroundStyle(Color.darkInk)
 
                 Spacer()
-
-                Button {
-                    save()
-                } label: {
-                    if isSaving { ProgressView() } else { Text("Save") }
-                }
-                .foregroundStyle(Color.darkInk)
-                .fontWeight(.medium)
-                .disabled(isSaving)
             }
 
             TextField("Title", text: $title)
@@ -150,12 +142,6 @@ struct LyricsView: View {
     private var wordCountString: String {
         let count = text.split { $0.isWhitespace || $0.isNewline }.count
         return "\(count) words"
-    }
-
-    private func save() {
-        isSaving = true
-        onSave()
-        isSaving = false
     }
 
     private func insertSuggestion() {
