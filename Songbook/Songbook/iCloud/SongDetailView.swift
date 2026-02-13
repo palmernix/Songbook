@@ -198,6 +198,7 @@ struct SongDetailView: View {
         songFile.entries.append(entry)
         songFile.updatedAt = Date()
         saveToDisk()
+        navigationPath.append(entry.id)
     }
 
     private func deleteEntry(_ entry: SongEntry) {
