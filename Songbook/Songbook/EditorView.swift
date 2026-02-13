@@ -1,9 +1,10 @@
 import SwiftUI
-import SwiftData
 
-struct EditorView: View {
-    @Environment(\.modelContext) private var context
-    @Bindable var song: Song
+struct LyricsView: View {
+    @Binding var title: String
+    @Binding var text: String
+    var onSave: () -> Void
+    var onBack: (() -> Void)? = nil
 
     @State private var isSaving = false
     @State private var showInspire = false
@@ -46,14 +47,14 @@ struct EditorView: View {
             )
             .presentationDetents([.fraction(0.35), .medium, .large])
         }
-        .onAppear { if song.title.isEmpty { song.title = "Untitled" } }
+        .onAppear { if title.isEmpty { title = "Untitled" } }
     }
 
     private var titleRow: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Button {
-                    dismiss()
+                    if let onBack { onBack() } else { dismiss() }
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.body.weight(.semibold))
@@ -72,10 +73,9 @@ struct EditorView: View {
                 .disabled(isSaving)
             }
 
-            TextField("Title", text: $song.title)
+            TextField("Title", text: $title)
                 .font(.system(.title2, design: .serif, weight: .bold))
                 .textInputAutocapitalization(.words)
-                .onChange(of: song.title) { _ in touch() }
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -83,7 +83,7 @@ struct EditorView: View {
     }
 
     private var editorCard: some View {
-        CursorTextEditor(text: $song.text, selectedRange: $selection)
+        CursorTextEditor(text: $text, selectedRange: $selection)
             .scrollContentBackground(.hidden)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -93,7 +93,6 @@ struct EditorView: View {
                     .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 2)
             )
             .padding(.horizontal, 16)
-            .onChange(of: song.text) { _ in touch() }
     }
 
     private var bottomBar: some View {
@@ -136,7 +135,7 @@ struct EditorView: View {
             suggestion = try await APIClient.shared.suggest(
                 userLyrics: currentLineAtCaret(),
                 contextFocus: currentStanzaAtCaret(),
-                contextFull: song.text,
+                contextFull: text,
                 options: options
             )
 
@@ -148,31 +147,25 @@ struct EditorView: View {
     }
 
     private var wordCountString: String {
-        let count = song.text.split { $0.isWhitespace || $0.isNewline }.count
+        let count = text.split { $0.isWhitespace || $0.isNewline }.count
         return "\(count) words"
-    }
-
-    private func touch() {
-        song.updatedAt = Date()
     }
 
     private func save() {
         isSaving = true
-        defer { isSaving = false }
-        try? context.save()
-        // TODO: call API /ingest/snapshot here (later)
+        onSave()
+        isSaving = false
     }
 
     private func insertSuggestion() {
         guard !suggestion.isEmpty else { return }
 
-        if !song.text.hasSuffix(" ") && !suggestion.hasPrefix(" ") && !song.text.isEmpty {
-            song.text.append(" ")
+        if !text.hasSuffix(" ") && !suggestion.hasPrefix(" ") && !text.isEmpty {
+            text.append(" ")
         }
 
-        song.text.append(suggestion)
+        text.append(suggestion)
         suggestion = ""
-        touch()
         showInspire = false
     }
 
@@ -184,7 +177,7 @@ struct EditorView: View {
             let s = try await APIClient.shared.suggest(
                 userLyrics: currentLineAtCaret(),
                 contextFocus: currentStanzaAtCaret(),
-                contextFull: song.text,
+                contextFull: text,
                 options: inspireOptions
             )
             suggestion = s
@@ -193,13 +186,12 @@ struct EditorView: View {
         }
     }
 
-    // Helpers to capture context
     private func currentLineAtCaret() -> String {
-        let ns = song.text as NSString
+        let ns = text as NSString
         var pos = selection.location + selection.length
         pos = max(0, min(pos, ns.length))
 
-        if pos > 0, ns.character(at: pos - 1) == 10 { // '\n'
+        if pos > 0, ns.character(at: pos - 1) == 10 {
             return ""
         }
 
@@ -212,11 +204,11 @@ struct EditorView: View {
     }
 
     private func currentStanzaAtCaret() -> String {
-        let lines = song.text.components(separatedBy: "\n")
+        let lines = text.components(separatedBy: "\n")
 
-        let loc = min(selection.location, (song.text as NSString).length)
-        let caret = song.text.index(song.text.startIndex, offsetBy: loc)
-        let caretLineIndex = song.text[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
+        let loc = min(selection.location, (text as NSString).length)
+        let caret = text.index(text.startIndex, offsetBy: loc)
+        let caretLineIndex = text[..<caret].reduce(0) { $1 == "\n" ? $0 + 1 : $0 }
 
         var start = caretLineIndex
         while start > 0 && !lines[start - 1].trimmingCharacters(in: .whitespaces).isEmpty {
