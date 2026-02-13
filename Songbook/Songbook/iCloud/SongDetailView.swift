@@ -44,6 +44,8 @@ struct SongDetailView: View {
                         NotesEntryEditor(songFile: $songFile, entryID: entryID, folderURL: folderURL)
                     case .audio:
                         AudioEntryEditor(songFile: $songFile, entryID: entryID, folderURL: folderURL)
+                    case .video:
+                        VideoEntryEditor(songFile: $songFile, entryID: entryID, folderURL: folderURL)
                     }
                 }
             }
@@ -163,6 +165,18 @@ struct SongDetailView: View {
                         Image(systemName: "waveform")
                     }
                 }
+
+                Button {
+                    addEntry(type: .video, title: "Video")
+                    showNewEntrySheet = false
+                } label: {
+                    Label {
+                        Text("New Video")
+                            .font(.body.weight(.medium))
+                    } icon: {
+                        Image(systemName: "video")
+                    }
+                }
             }
             .foregroundStyle(.white)
             .navigationTitle("New Entry")
@@ -209,6 +223,7 @@ private struct EntryCard: View {
         case .lyrics: "text.quote"
         case .notes: "note.text"
         case .audio: "waveform"
+        case .video: "video.fill"
         }
     }
 
@@ -313,6 +328,36 @@ private struct AudioEntryEditor: View {
             AudioView(
                 title: $songFile.entries[index].title,
                 audioData: $songFile.entries[index].audioData,
+                onSave: {
+                    songFile.entries[index].updatedAt = Date()
+                    songFile.updatedAt = Date()
+                    let copy = songFile
+                    let url = folderURL
+                    Task.detached {
+                        try? await iCloudScanService.writeSongFile(copy, to: url)
+                    }
+                }
+            )
+        }
+    }
+}
+
+// MARK: - VideoEntryEditor
+
+private struct VideoEntryEditor: View {
+    @Binding var songFile: SongFile
+    let entryID: UUID
+    let folderURL: URL
+
+    private var entryIndex: Int? {
+        songFile.entries.firstIndex(where: { $0.id == entryID })
+    }
+
+    var body: some View {
+        if let index = entryIndex {
+            VideoView(
+                title: $songFile.entries[index].title,
+                videoData: $songFile.entries[index].videoData,
                 onSave: {
                     songFile.entries[index].updatedAt = Date()
                     songFile.updatedAt = Date()

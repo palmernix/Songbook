@@ -4,6 +4,8 @@
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Songbook uses the microphone to record audio for your songs.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Songbook uses the camera to record video for your songs.</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

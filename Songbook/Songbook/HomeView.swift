@@ -227,6 +227,8 @@ private struct SwiftDataSongDetailView: View {
                         SwiftDataNotesEditor(song: song, entryID: entryID)
                     case .audio:
                         SwiftDataAudioEditor(song: song, entryID: entryID)
+                    case .video:
+                        SwiftDataVideoEditor(song: song, entryID: entryID)
                     }
                 }
             }
@@ -346,6 +348,18 @@ private struct SwiftDataSongDetailView: View {
                         Image(systemName: "waveform")
                     }
                 }
+
+                Button {
+                    addEntry(type: .video, title: "Video")
+                    showNewEntrySheet = false
+                } label: {
+                    Label {
+                        Text("New Video")
+                            .font(.body.weight(.medium))
+                    } icon: {
+                        Image(systemName: "video")
+                    }
+                }
             }
             .foregroundStyle(.white)
             .navigationTitle("New Entry")
@@ -384,6 +398,7 @@ private struct SwiftDataEntryCard: View {
         case .lyrics: "text.quote"
         case .notes: "note.text"
         case .audio: "waveform"
+        case .video: "video.fill"
         }
     }
 
@@ -476,6 +491,30 @@ private struct SwiftDataAudioEditor: View {
             AudioView(
                 title: $song.entries[index].title,
                 audioData: $song.entries[index].audioData,
+                onSave: {
+                    song.entries[index].updatedAt = Date()
+                    song.updatedAt = Date()
+                    try? context.save()
+                }
+            )
+        }
+    }
+}
+
+private struct SwiftDataVideoEditor: View {
+    @Bindable var song: Song
+    let entryID: UUID
+    @Environment(\.modelContext) private var context
+
+    private var entryIndex: Int? {
+        song.entries.firstIndex(where: { $0.id == entryID })
+    }
+
+    var body: some View {
+        if let index = entryIndex {
+            VideoView(
+                title: $song.entries[index].title,
+                videoData: $song.entries[index].videoData,
                 onSave: {
                     song.entries[index].updatedAt = Date()
                     song.updatedAt = Date()

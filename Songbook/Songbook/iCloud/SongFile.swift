@@ -4,6 +4,7 @@ enum EntryType: String, Codable {
     case lyrics
     case notes
     case audio
+    case video
 }
 
 struct SongEntry: Identifiable, Hashable, Codable {
@@ -12,15 +13,17 @@ struct SongEntry: Identifiable, Hashable, Codable {
     var title: String
     var text: String
     var audioData: Data?
+    var videoData: Data?
     var createdAt: Date
     var updatedAt: Date
 
-    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
+    init(id: UUID = UUID(), type: EntryType, title: String, text: String = "", audioData: Data? = nil, videoData: Data? = nil, createdAt: Date = Date(), updatedAt: Date = Date()) {
         self.id = id
         self.type = type
         self.title = title
         self.text = text
         self.audioData = audioData
+        self.videoData = videoData
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
